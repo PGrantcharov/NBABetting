@@ -1,0 +1,27 @@
+To Do List:
+- get all raw data and put in data folder (Peter)
+- merge all the .xlsx files into one single data base
+- tidy data so each row contains information from one NBA game
+- clean data for impossible values (I recall, they're in there)
+- gather separate data that may have some pertinent relationships to what we're studying, e.g. a vector with population sizes for each city
+
+MAIN IDEAS:
+- for every game there is a TRUE win probability for both teams, which is theoretically impossible to know because sports have an infinite number of variables
+- for every game there is an EXPECTED win probability for both teams --> this is given by the betting lines
+- betting lines for a given match are completely independent of the true win probability, as they are solely determined by how bettors place their money
+	- i.e. if Lakers play the Warriors and everyone bet on the Lakers, the sportsbook betting line would reflect that by making the Lakers the favorite and the Warriors the underdog, in spite of common sense
+- these two are never equal (theoretically), so for a zero commission sportsbook, there is always a team that's overvalued (true win probability < expected win probability) and a team that's undervalued (true win probability > expected win probability)
+- teams/variables/players may change, but the schmucks betting on these games will always exhibit the same tendencies (my hypothesis)
+- as such, there will likely be patterns in which teams are overvalued (inflated betting lines) and which are undervalued
+ 
+
+Relationships to Investigate:
+* We do not need to do all of these; just pick a couple that are interesting, can make good looking graphics, and may reveal some interesting insights  
+- Home field advantage 
+- City population size (maybe big towns have more bets placed on their teams) *could do a mapping over the US for American sports
+- Could compare expected win percentage to true win percentage, and do some illustrations for expected returns if you had bet on all of these matches
+- Could investigate popular claims like “never take the over” or “always bet home team”
+- Could investigate how previous champions do
+- Could see how record at a given point in time affects how people bet (would need to parse the file and get records of teams)
+- Could see how bettors maybe get better as season goes on (I.e. compare returns during early season months… then later season months)
+- Could see how the last 3/5/10 meetings between two teams affect how bettors place their money
