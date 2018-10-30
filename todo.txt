@@ -1,5 +1,5 @@
 To Do List:
-- get all raw data and put in data folder (Peter)
+- (Done) get all raw data and put in data folder (Peter)
 - merge all the .xlsx files into one single data base
 - tidy data so each row contains information from one NBA game
 - clean data for impossible values (I recall, they're in there)
