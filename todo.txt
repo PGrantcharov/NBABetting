@@ -32,6 +32,7 @@ Relationships to Investigate:
 * We do not need to do all of these; just pick a couple that are interesting, 
 	can make good looking graphics, and may reveal some cool insights*  
 - Home field advantage 
+- The relationship between the over under and the moneyline
 - City population size (maybe big towns have more bets placed on their teams) 
 	*could do a mapping over the US for American sports
 - Could compare expected win percentage to true win percentage, and do some 
