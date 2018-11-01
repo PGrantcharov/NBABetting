@@ -1,8 +1,8 @@
 To Do List:
-- (Done) get all raw data and put in data folder (Peter)
-- merge all the .xlsx files into one single data base
+- (Done) get all raw data and put in data folder
+- (Done) merge all the .xlsx files into one single data base
 - tidy data so each row contains information from one NBA game
-- clean data for impossible values (I recall, they're in there)
+- clean data for impossible values
 - gather separate data that may have some pertinent relationships to what 
 	we're studying, e.g. a vector with population sizes for each city
 
@@ -28,9 +28,11 @@ MAIN IDEAS:
 	(inflated betting lines) and which are undervalued
  
 
-Relationships to Investigate:
+Relationships to Investigate / Graph Ideas:
 * We do not need to do all of these; just pick a couple that are interesting, 
 	can make good looking graphics, and may reveal some cool insights*  
+- Definitely need a graph that shows how true win % compares to expected (from 
+	0% --> 100%
 - Home field advantage 
 - The relationship between the over under and the moneyline
 - City population size (maybe big towns have more bets placed on their teams) 
