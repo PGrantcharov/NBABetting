@@ -5,25 +5,26 @@ import datetime as dt
 
 df = pd.read_csv("../Data/combined.csv")
 df.dropna(axis=0, how="any", inplace=True)
-df = df.reset_index().drop(columns=["Unnamed: 0"])
+df = df.reset_index(drop=True).drop(columns=["Unnamed: 0", "Rot"])
 
+# Adds season year (07-08 season would just add 2007 for all) to all dates
 year = "2007"
+len_last = 4
 for i in range(len(df)):
-    try:
-        if (df.iloc[i+1, 1] - df.iloc[i, 1]) > 200:  # this checks when there's a jump in months since last game
-            year = str(int(year) + 1)
-    except IndexError:
-        pass
-    df.iloc[i, 1] = str(df.iloc[i, 1]) + year
+    if len(str(df.ix[i, "Date"])) > len_last:  # this checks when there's a jump in months since last game
+        year = str(int(year) + 1)
+    len_last = len(str(df.ix[i, "Date"]))
+    df.ix[i, "Date"] = str(df.ix[i, "Date"]) + year
 
-fucked_dates = []
+
+# Converts to dates to date object; converts feb 29 days to feb 28 as these were only errors
 for i in range(len(df)):
     try:
-        df.iloc[i, 1] = dt.datetime.strptime(df.iloc[i, 1], "%m%d%Y").date()
+        df.ix[i, "Date"] = dt.datetime.strptime(df.ix[i, "Date"], "%m%d%Y").date()
     except ValueError:
-        fucked_dates.append(i)
+        df.ix[i, "Date"] = str(int(df.ix[i, "Date"]) - 10000)
+        df.ix[i, "Date"] = dt.datetime.strptime(df.ix[i, "Date"], "%m%d%Y").date()
 
-# NEED TO FIX THESE DATES
 
-# run when we're done
+# run when we're done cleaning and tidying
 # df.to_csv("../Data/cleaned.csv")
