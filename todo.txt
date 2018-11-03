@@ -1,8 +1,8 @@
 To Do List:
 - (Done) get all raw data and put in data folder
 - (Done) merge all the .xlsx files into one single data base
-- tidy data so each row contains information from one NBA game
-- clean data for impossible values
+- (Done) tidy data so each row contains information from one NBA game
+- (mostly done) clean data for impossible values
 - gather separate data that may have some pertinent relationships to what 
 	we're studying, e.g. a vector with population sizes for each city
 
@@ -47,3 +47,6 @@ Relationships to Investigate / Graph Ideas:
 	during early season months… then later season months)
 - Could see how the last 3/5/10 meetings between two teams affect how bettors 
 	place their money
+- Margin of victory vs money line /over under
+- Playing back-to-back games 
+- Picking based on the direction that the line moved; severity of the movement
