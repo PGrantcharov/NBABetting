@@ -5,9 +5,7 @@ import seaborn as sns
 
 
 df = pd.read_csv("../Data/combined.csv")
-df.dropna(axis=0, how="any", inplace=True)
 df = df.reset_index(drop=True).drop(columns=["Unnamed: 0", "Rot"])
-
 
 # Make spelling consistent; replace NewJersey --> Brooklyn
 df = df.replace(to_replace="NewJersey", value="Brooklyn")
@@ -21,11 +19,6 @@ sns.catplot(y='2nd', data=df, kind="box")
 sns.catplot(y='3rd', data=df, kind="box")
 sns.catplot(y='4th', data=df, kind="box")
 '''
-
-# Removes a few outliers
-df = df[df['1st'] < 70]
-df = df[df['2nd'] > 0]
-df = df.reset_index(drop=True)
 
 # fix detroit v. phoenix game scores; bad entry fixes
 df.ix[[2916, 2917], ["1st", "2nd"]] = [[23, 23], [31, 30]]
@@ -61,8 +54,7 @@ for i in range(len(df)):
         df.ix[i, "Date"] = dt.datetime.strptime(df.ix[i, "Date"], "%m%d%Y").date()
 
 
-# Make tidy data frame
-
+# MAKE TIDY DATA FRAME
 # columns of new data frame that has one game per row
 tidy = pd.DataFrame(columns=["Date", "V", "H", "V1", "V2", "V3", "V4", "H1", "H2", "H3", "H4", "VF", "HF",
                              "OUOpen", "OUClose", "VSpreadOpen", "HSpreadOpen", "VSpreadClose", "HSpreadClose",
@@ -118,5 +110,10 @@ for i in range(int(len(df)/2)-1):
 
     tidy.loc[i] = row
 
-df.to_csv("../Data/tidy.csv")
+# Removes a few outliers
+tidy.iloc[:, 3:11] = tidy.iloc[:, 3:11][tidy.iloc[:, 3:11] < 70]
+tidy.iloc[:, 3:11] = tidy.iloc[:, 3:11][tidy.iloc[:, 3:11] > 0]
+tidy = tidy.reset_index(drop=True)
 
+
+tidy.to_csv("../Data/tidy.csv")
