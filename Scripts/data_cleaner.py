@@ -3,7 +3,6 @@ import numpy as np
 import datetime as dt
 import seaborn as sns
 
-
 df = pd.read_csv("../Data/combined.csv")
 df = df.reset_index(drop=True).drop(columns=["Unnamed: 0", "Rot"])
 
@@ -12,18 +11,12 @@ df = df.replace(to_replace="NewJersey", value="Brooklyn")
 df = df.replace(to_replace="Oklahoma City", value="OklahomaCity")
 df = df.replace(to_replace="LA Clippers", value="LAClippers")
 
-'''
-# shows where the outliers are
-sns.catplot(y='1st', data=df, kind="box")
-sns.catplot(y='2nd', data=df, kind="box")
-sns.catplot(y='3rd', data=df, kind="box")
-sns.catplot(y='4th', data=df, kind="box")
-'''
 
 # fix detroit v. phoenix game scores; bad entry fixes
 df.ix[[2916, 2917], ["1st", "2nd"]] = [[23, 23], [31, 30]]
 df.ix[1974, "Open"] = 197.5
 df.ix[11192, "2H"] = np.nan
+df.ix[23520, 'Open'] = 195.5
 
 
 # replace all pk odds (i.e. 50/50 outcomes) with 0 so we can make last four columns integers
@@ -110,10 +103,28 @@ for i in range(int(len(df)/2)-1):
 
     tidy.loc[i] = row
 
-# Removes a few outliers
+# Removes/fixes a few outliers
 tidy.iloc[:, 3:11] = tidy.iloc[:, 3:11][tidy.iloc[:, 3:11] < 70]
 tidy.iloc[:, 3:11] = tidy.iloc[:, 3:11][tidy.iloc[:, 3:11] > 0]
+tidy.OUOpen = tidy.OUOpen[tidy.OUOpen > 100]
 tidy = tidy.reset_index(drop=True)
+tidy.iloc[:, 3:] = tidy.iloc[:, 3:].astype(float)
+tidy.OUOpen[tidy.OUOpen == tidy.OUOpen.min()] = tidy.OUClose[tidy.OUOpen == tidy.OUOpen.min()]
+tidy.ix[5598, 'OU2H'] = round(tidy[tidy.OUClose.between(197, 198)].OU2H.mean()*2)/2
+tidy.dropna(axis=0, how='any', inplace=True)
 
+tidy.ix[11958, 'VF'] = tidy.ix[11958, ['V1', 'V2', 'V3', 'V4']].sum()
+tidy.ix[11958, 'HF'] = tidy.ix[11958, ['H1', 'H2', 'H3', 'H4']].sum()
 
 tidy.to_csv("../Data/tidy.csv")
+
+
+# Quick graphs to check for outliers:
+tidy.ix[:, 3:11].plot(kind='box')  # Quarter Scores
+tidy.ix[:, 11:13].plot(kind='box')  # Final Scores
+tidy.ix[:, 13:15].plot(kind='box')  # OUs
+tidy.ix[:, 15:19].plot(kind='box')  # Spreads
+tidy.ix[:, 19:21].plot(kind='box')  # Money lines
+tidy.ix[:, 21].plot(kind='box')  # OU second half
+tidy.ix[:, 22:].plot(kind='box')  # Spreads second half
+
