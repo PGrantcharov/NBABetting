@@ -1,6 +1,7 @@
 GROUP PROJECT
 - All the raw data files from NBA games in the past 11 seasons are in the
 	data folder
+	(https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm?fbclid=IwAR2deTtuG0fgcXCEsAYw5L3LeHs_F1WSrwTIExUO4smAwpOpMRngjY0VIHM)
 - There's a to do list file that has some tasks that need to get tackled at
 	some point, the main ideas for what we're investigating, and some
 	possible relationships to investigate
