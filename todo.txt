@@ -3,6 +3,19 @@ To Do List:
 - (Done) merge all the .xlsx files into one single data base
 - (Done) tidy data so each row contains information from one NBA game
 - (mostly done) clean data for impossible values
+	- Po QC
+	- team name consistency of V and H variables double checked
+	- score variables V1~V4, H1~H4, impossible values double checked 
+	- NL valued replaced and dropped by Peter, double checked
+	- ML : Money Line. You are betting the outright straight up winner without 
+		regard to point spread. A negative ML is assigned to teh favorite, 
+		lets say -200 means you will have to bet 200 to win 100 whereas the underdog 
+		is a positive +200 means you lay 100 to win 200.
+		(https://www.sportsbookreview.com/forum/college-football-betting/21239-what-does-ml-mean.html)
+	- 2H : half time betting? (https://www.pickmonitor.com/t/2nd-half-betting-in-basketball-and-football) 
+	- Open/close : Can't find where to decode the spreadsheet. Not sure how to interpret Open/close into four variables.
+	- Vmoney/Hmoney: there are 383 entries have same sign, does it possible? For example, 2007/11/4 Utah vs Lakers. 
+	
 - gather separate data that may have some pertinent relationships to what 
 	we're studying, e.g. a vector with population sizes for each city
 
