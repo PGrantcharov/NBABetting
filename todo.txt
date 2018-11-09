@@ -18,6 +18,7 @@ To Do List:
 	
 - gather separate data that may have some pertinent relationships to what 
 	we're studying, e.g. a vector with population sizes for each city
+	-find yearly team revenue. upload links csv file. 
 
 MAIN IDEAS:
 - for every game there is a TRUE win probability for both teams, which is
