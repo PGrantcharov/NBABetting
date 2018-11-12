@@ -1,0 +1,162 @@
+---
+title: "GR5702 EDAV Homework 4 Q3"
+author: "Po-Chieh Liu (pl2441)"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+```
+
+```{r}
+library(tidyverse)
+df <- read_csv('tidy.csv')
+
+hw4_df <- df %>% select(Date,V, H, V1, V2, V3, V4, H1, H2, H3, H4, OU2H) %>%
+  mutate(Year = format(Date, "%Y") ) %>%
+  mutate(Q3Q4 = V3+V4+H3+H4) %>%
+  mutate(Q1Q2 = V1+V2+H1+H2) %>%
+  mutate(Q1 = V1+H1) %>%
+  select(Year, Q1, Q1Q2, Q3Q4, OU2H, V, H) 
+
+```
+
+### Quick Introduction 
+
+Supreme Court struck down a 1992 federal law on 2018 May to loose the restriction on sport betting. Later, there are several online betting services start running. One of our group member is interested in how the house gain profits from designing or computing proper moneylines and estimated final scores. The dataset we have contains the NBA games' data including date, visiting team, home team, scores of each quarter, house estimated final scores, and second half scoures and so on. In this assignment, I selected the house estimated 2nd half score and check the performance. Then select the 1st and 2nd quarter scores as predictor to predict the 2nd half score. Maybe the score is a good predictor for modifying the house 2nd half score prediction, or a good strategy for gambler to bet.
+
+## House 2nd Half Score Performance Plot
+
+From the first plot and second plot, we can observe that there are around 7500 games (54%) are overestimated, and 6600 games (46%) are underestimated. If we assume all betting amounts are the same, and the half of overall betting is greater than final 2nd half score, and half is less than final 2nd half score, then the house will lose 8% due to the unaccurate house score. 
+
+```{r}
+df <- hw4_df %>% select(OU2H, Q3Q4) %>% 
+  mutate(performance = if_else(OU2H > Q3Q4, 'Overestimate', 'Underestimate')) 
+
+ggplot(df, aes(x = performance, fill = performance)) +
+  geom_bar() +
+  scale_y_continuous("Number of Games", breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000)) +
+  scale_x_discrete("House Predicited 2nd Half Score")
+```
+
+
+```{r}
+ggplot(df, aes(x = performance, fill = performance)) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5), labels = c('0%', '10%', '20%', '30%', '40%', '50%')) +
+  scale_x_discrete("House Predicited 2nd Half Score")
+```
+
+
+## Predicted 2nd Half Score with Q1 score Performance
+
+The following 2 plots are the prediction performance using the double first quarter score. From the plots, we can observe that we will lose aorund 7400 games by using this stregy.
+
+```{r}
+df <- hw4_df %>% select(Q1, Q3Q4, OU2H) %>% 
+  mutate(performance = if_else( ((OU2H>Q3Q4)&(OU2H>2*Q1))|(OU2H<Q3Q4)&(OU2H<2*Q1) ,'Gain','Lost')) 
+
+ggplot(df, aes(x = performance, fill = performance)) +
+  geom_bar() +
+  scale_y_continuous("Number of Games", breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000)) +
+  scale_x_discrete("Predicited 2nd Half Score Performance")
+```
+
+```{r}
+df <- hw4_df %>% select(Q1, Q3Q4, OU2H) %>% 
+  mutate(performance = if_else( ((OU2H>Q3Q4)&(OU2H>2*Q1))|(OU2H<Q3Q4)&(OU2H<2*Q1) ,'Gain','Lost')) 
+
+ggplot(df, aes(x = performance, fill = performance)) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5), labels = c('0%', '10%', '20%', '30%', '40%', '50%')) +
+  scale_x_discrete("Predicited 2nd Half Score Performance")
+```
+
+## Predicted 2nd Half Score with Q1 and Q2 score Performance
+
+The following 2 plots are prediction performance using the sum of 1st and 2nd quarter scores. From the plots, the Gain/lost counts and ratios are very similar to previous plots. The gain/lost counts from previous plots are 6839/7347, and for this plots are 6858/7328.
+
+```{r}
+df <- hw4_df %>% select(Q1Q2, Q3Q4, OU2H) %>% 
+  mutate(performance = if_else( ((OU2H>Q3Q4)&(OU2H>Q1Q2))|(OU2H<Q3Q4)&(OU2H<Q1Q2) ,'Gain','Lost')) 
+
+ggplot(df, aes(x = performance, fill = performance)) +
+  geom_bar() +
+  scale_y_continuous("Number of Games", breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000)) +
+  scale_x_discrete("Predicited 2nd Half Score Performance")
+```
+
+```{r}
+df <- hw4_df %>% select(Q1Q2, Q3Q4, OU2H) %>% 
+  mutate(performance = if_else( ((OU2H>Q3Q4)&(OU2H>Q1Q2))|(OU2H<Q3Q4)&(OU2H<Q1Q2) ,'Gain','Lost')) 
+
+ggplot(df, aes(x = performance, fill = performance)) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5), labels = c('0%', '10%', '20%', '30%', '40%', '50%')) +
+  scale_x_discrete("Predicited 2nd Half Score Performance")
+
+```
+
+## Predicted 2nd Half Score with Q1 and Q2 Score Performance (Yearly)
+
+The following plots shows the yearly predicting performance by using 1st quarter score and both 1st and 2nd quarter scores. We can observe taht for using those methods, in 2013 and 2014 we will have a lot lost.
+
+```{r}
+df <- hw4_df %>% select(Q1, Q3Q4, OU2H, Year) %>% 
+  mutate(performance = if_else( ((OU2H>Q3Q4)&(OU2H>2*Q1))|(OU2H<Q3Q4)&(OU2H<2*Q1) ,'Gain','Lost'))
+
+ggplot(df, aes(x = Year, fill = performance)) +
+  geom_bar(position = "dodge") +
+  scale_y_continuous("Number of Games") +
+  scale_x_discrete("Predicited 2nd Half Score Performance") 
+```
+
+```{r}
+df <- hw4_df %>% select(Q1Q2, Q3Q4, OU2H, Year) %>% 
+  mutate(performance = if_else( ((OU2H>Q3Q4)&(OU2H>Q1Q2))|(OU2H<Q3Q4)&(OU2H<Q1Q2) ,'Gain','Lost')) 
+
+ggplot(df, aes(x = Year, fill = performance)) +
+  geom_bar(position = "dodge") +
+  scale_y_continuous("Number of Games") +
+  scale_x_discrete("Predicited 2nd Half Score Performance") 
+```
+
+## Predicted 2nd Half Score with Q1 and Q2 Score Performance (By Region)
+
+
+
+```{r}
+East <- c("Atlanta", "Boston", "Brooklyn", "Charlotte", "Chicago", "Cleveland", "Detroit", "Indiana", "Miami", "Milwaukee","NewYork","Orlando","Philadelphia","Toronto","Washington")
+
+df <- hw4_df %>% select(V, H, Q1, Q3Q4, OU2H, Year) %>% 
+  mutate(performance = if_else( ((OU2H>Q3Q4)&(OU2H>2*Q1))|(OU2H<Q3Q4)&(OU2H<2*Q1) ,'Gain','Lost')) %>%
+  mutate(Vside = if_else(V %in% East, 'East', 'West')) %>%
+  mutate(Hside = if_else(H %in% East, 'East', 'West')) %>%
+  mutate(side = if_else( Vside == Hside, if_else(Vside == 'East', 'East', 'West'), 'East-West'))
+
+ggplot(df, aes(x = side, fill = performance)) +
+  geom_bar(position = "dodge") +
+  scale_y_continuous("Number of Games") +
+  scale_x_discrete("Predicited 2nd Half Score Performance")
+
+```
+
+
+```{r}
+East <- c("Atlanta", "Boston", "Brooklyn", "Charlotte", "Chicago", "Cleveland", "Detroit", "Indiana", "Miami", "Milwaukee","NewYork","Orlando","Philadelphia","Toronto","Washington")
+
+df <- hw4_df %>% select(V, H, Q1Q2, Q3Q4, OU2H, Year) %>% 
+  mutate(performance = if_else( ((OU2H>Q3Q4)&(OU2H>Q1Q2))|(OU2H<Q3Q4)&(OU2H<Q1Q2) ,'Gain','Lost')) %>%
+  mutate(Vside = if_else(V %in% East, 'East', 'West')) %>%
+  mutate(Hside = if_else(H %in% East, 'East', 'West')) %>%
+  mutate(side = if_else( Vside == Hside, if_else(Vside == 'East', 'East', 'West'), 'East-West'))
+
+ggplot(df, aes(x = side, fill = performance)) +
+  geom_bar(position = "dodge") +
+  scale_y_continuous("Number of Games") +
+  scale_x_discrete("Predicited 2nd Half Score Performance")
+
+```
