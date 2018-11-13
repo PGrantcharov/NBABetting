@@ -13,7 +13,7 @@ knitr::opts_chunk$set(message = FALSE,
 
 ```{r}
 library(tidyverse)
-df <- read_csv('tidy.csv')
+df <- read_csv('../data/tidy.csv')
 
 hw4_df <- df %>% select(Date,V, H, V1, V2, V3, V4, H1, H2, H3, H4, OU2H) %>%
   mutate(Year = format(Date, "%Y") ) %>%
