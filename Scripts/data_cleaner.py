@@ -82,19 +82,35 @@ for i in range(int(len(df)/2)-1):
 
     # Adds VSpreadOpen and HSpreadOpen
     if df["Open"][i*2] > df["Open"][i*2+1]:
-        row.append(df["Open"][i*2+1])
-        row.append(df["Open"][i*2+1]*(-1))
+        if df["ML"][i*2] < 0:
+            row.append(df["Open"][i*2+1]*(-1))
+            row.append(df["Open"][i*2+1])
+        else:
+            row.append(df["Open"][i*2+1])
+            row.append(df["Open"][i*2+1]*(-1))
     else:
-        row.append(df["Open"][i*2]*(-1))
-        row.append(df["Open"][i*2])
+        if df["ML"][i*2] < 0:
+            row.append(df["Open"][i*2]*(-1))
+            row.append(df["Open"][i*2])
+        else:
+            row.append(df["Open"][i*2])
+            row.append(df["Open"][i*2]*(-1))
 
     # Adds VSpreadClose and HSpreadClose
     if df["Close"][i*2] > df["Close"][i*2+1]:
-        row.append(df["Close"][i*2+1])
-        row.append(df["Close"][i*2+1]*(-1))
+        if df["ML"][i*2] < 0:
+            row.append(df["Close"][i*2+1]*(-1))
+            row.append(df["Close"][i*2+1])
+        else:
+            row.append(df["Close"][i*2+1])
+            row.append(df["Close"][i*2+1]*(-1))
     else:
-        row.append(df["Close"][i*2]*(-1))
-        row.append(df["Close"][i*2])
+        if df["ML"][i*2] < 0:
+            row.append(df["Close"][i*2]*(-1))
+            row.append(df["Close"][i*2])
+        else:
+            row.append(df["Close"][i*2])
+            row.append(df["Close"][i*2]*(-1))
 
     # VMoney and HMoney
     row.append(df["ML"][i*2])
