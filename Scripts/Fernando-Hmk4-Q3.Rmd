@@ -58,7 +58,7 @@ odds$HSpreadChange <- odds$HSpreadClose - odds$HSpreadOpen
 ```
 
 ```{r}
-odds_melt <- melt(odds, id.vars="X", measure.vars=c("HSpreadChange", "VSpreadChange"))
+odds_melt <- melt(odds, id.vars="Index", measure.vars=c("HSpreadChange", "VSpreadChange"))
 odds_melt$variable <- revalue(odds_melt$variable, c("HSpreadChange"="Home", "VSpreadChange"="Visiting"))
 ```
 
