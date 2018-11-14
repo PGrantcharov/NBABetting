@@ -5,7 +5,6 @@
 
 import pandas as pd
 import numpy as np
-import datetime as dt
 import seaborn as sns
 import os
 
@@ -17,27 +16,18 @@ df = df.replace(to_replace="NewJersey", value="Brooklyn")
 df = df.replace(to_replace="Oklahoma City", value="OklahomaCity")
 df = df.replace(to_replace="LA Clippers", value="LAClippers")
 
-
 # fix detroit v. phoenix game scores; a few bad entry fixes
 df.loc[df.index[2916:2918], ["1st", "2nd"]] = [[23, 23], [31, 30]]
 df.loc[df.index[1974], "Open"] = 197.5
 df.loc[df.index[11192], "2H"] = np.nan
 df.loc[df.index[23520], 'Open'] = 195.5
 
-
 # replace all pk odds (i.e. 50/50 outcomes) with 0 so we can make last four columns integers
 df = df.replace(to_replace=["pk", "PK"], value=0)
 df = df.replace(to_replace="NL", value=np.nan)
 
-
 # make last few columns numeric
 df[["Open", "Close", "ML", "2H"]] = df[["Open", "Close", "ML", "2H"]].astype(float)
-
-
-# Converts to dates to date object; converts feb 29 days to feb 28 as these were only errors
-df['Date'] = df['Date'].astype(str)
-df['Date'] = df['Date'].apply(lambda x: dt.datetime.strptime(x, "%m%d%Y"))
-
 
 # MAKE TIDY DATA FRAME
 # columns of new data frame that has one game per row
@@ -125,7 +115,6 @@ tidy.loc[df.index[11958], 'VF'] = tidy.loc[df.index[11958], ['V1', 'V2', 'V3', '
 tidy.loc[df.index[11958], 'HF'] = tidy.loc[df.index[11958], ['H1', 'H2', 'H3', 'H4']].sum()
 
 tidy.to_csv("../Data/tidy.csv", index_label="Index")
-
 
 # Quick graphs to check for outliers:
 '''tidy.ix[:, 3:11].plot(kind='box')  # Quarter Scores

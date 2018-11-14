@@ -1,3 +1,6 @@
+# Basically nothing has been done on this page so feel free to test some relationships here, or on a separate
+# script - whatever you guys prefer.
+
 import pandas as pd
 import numpy as np
 import statsmodels.formula.api as sm
@@ -11,7 +14,6 @@ dfpos["BetSpread"] = pd.Series()
 dfpos.loc[:, "BetSpread"][(dfpos.ix[:, 'HF'] - dfpos.ix[:, 'VF']) > dfpos.ix[:, 'HSpreadClose']] = "win"
 dfpos.loc[:, "BetSpread"][(dfpos.ix[:, 'HF'] - dfpos.ix[:, 'VF']) == dfpos.ix[:, 'HSpreadClose']] = "tie"
 dfpos.loc[:, "BetSpread"][(dfpos.ix[:, 'HF'] - dfpos.ix[:, 'VF']) < dfpos.ix[:, 'HSpreadClose']] = "lose"
-
 
 
 result = sm.ols(formula="HSpreadClose ~ HProb", data=dfpos).fit()

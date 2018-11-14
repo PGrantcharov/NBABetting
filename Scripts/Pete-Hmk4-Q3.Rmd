@@ -2,18 +2,22 @@
 title: "Hmk4-Q3"
 author: "Peter Grantcharov"
 date: "11/13/2018"
-output: html_document
+output:
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(tidyverse)
+library(dygraphs)
+library(xts)
 ```
 
-# BASICS
 
 ### Data Description
 
-This data set contains the scoring data AND sports betting data for all NBA games played since the start of the 2007-2008 season, to the conclusion of the 2017-2018 season. This has been preprocessed (cleaned, tidied) in Python (python scripts will be included for final project), and as such, I will only import the tidy data frame.
+This data set contains the scoring data AND sports betting data for all NBA games played from the 2007-2008 season to the conclusion of the 2017-2018 season. This has been preprocessed (cleaned, tidied) in Python (python scripts will be included for final project).
 
 The column name descriptions are as follows:
 
@@ -36,11 +40,9 @@ OU(Open/Close) = Over/under betting line for total number of points in the game 
 
 ### Getting Data
 
-With that established, let's get the data. Of all the variables described above, I am particular interested in investigating how the moneylines (a disguised version of win probability) pair up with the true game outcomes. As such, I will select out the relevant columns. I will also convert the moneylines to their corresponding win probabilities, in percentages from 0% to 100%
+With that established, let's get the data. Of all the variables described above, I am particular interested in investigating how the moneylines (a disguised version of win probability) pair up with the true game outcomes. In other words, how good is the market at estimating the true win probabilities? As such, I will select out the relevant columns. I will also convert the moneylines to their corresponding win probabilities, in percentages from 0% to 100%. The head of the resulting data frame is displayed below.
 
-```{r }
-library(plyr)
-library(tidyverse)
+```{r message=FALSE, warning=FALSE}
 full_df <- read_csv("../Data/tidy.csv")
 df <- full_df %>% select(Date, V, H, VF, HF, VMoney, HMoney)
 
@@ -49,26 +51,22 @@ df$HMoney[df$HMoney > 0] <- (100/(df$HMoney[df$HMoney > 0] + 100))*100
 df$VMoney[df$VMoney < 0] <- ((df$VMoney[df$VMoney < 0])/(df$VMoney[df$VMoney < 0] - 100))*100
 df$HMoney[df$HMoney < 0] <- ((df$HMoney[df$HMoney < 0])/(df$HMoney[df$HMoney < 0] - 100))*100
 
-
 head(df)
 ```
 
 
 ### Data Distribution
 
-
+As a starting point for this analysis, I would like to see the distribution of the win probabilities. Further, I suspect that Home and Away teams may have different distributions, so I will separate those in a separate graph. 
 ```{r}
-
 winprobs <- df %>% select(VMoney, HMoney)
 combined <- gather(winprobs, key = "Vis/Hom", value = "Prob")
 
-
 ggplot(data = combined) + 
-  geom_density(aes(x = Prob), lwd = 1, show.legend = TRUE) +
+  geom_density(aes(x = Prob), lwd = 1, color = "brown") +
   labs(x = "Win Probability", y = "Density",
-       title = "                                   Density Graph of Win Probabilities") +
+       title = "                              Density Graph of Win Probabilities Over All Games") +
   theme_bw()
-
 
 ggplot(data = df) + 
   geom_density(aes(x = VMoney, y = ..density.., color = "away"), lwd = 1) +
@@ -77,11 +75,13 @@ ggplot(data = df) +
        title = "     Density Graph of Win Probabilities for Home and Away Teams") +
   scale_color_manual(values = c('away' = 'blue', 'home' = 'red')) +
   theme_bw()
-
 ```
 
 
+From this graph, we can see that my suspicion was indeed correct. Home teams are found to have a greater than 50% win probability significantly more often than away teams. There is some interesting behavior around the 50% win probability mark, although studying that will be saved for another day. 
 
+### Truth vs. Prediction
+A follow-up question from observing these distributions, though, is just how accurate are these expected win probabilities with the true outcomes? To study this, I will create a line graph that plots the expected win probability against the true win probability. I will also include a standard y = x line to make it easy to visually observe where the possible disparities lie. 
 
 ```{r}
 # create boolean columns that contain whether visiting team or home team won; remove ties
@@ -101,105 +101,106 @@ combined_g <- gather(group_df, key = "V/H", value = "winprob")
 super_combo <- data_frame(combined_v$Result, combined_g$winprob)
 names(super_combo) <- c("Result", "WinProb")
 
-super_combo$WinProb <- round_any(super_combo$WinProb, 1, f = floor) + 0.5
+super_combo$WinProb <- round_any(super_combo$WinProb, 2, f = floor) + 1
 super_combo$WinProb <- as.factor(super_combo$WinProb)
 
 group_super <- super_combo %>% group_by(WinProb) %>% 
-  dplyr::summarize(games = n(), wins = sum(Result), winperc = sum(Result)/n())
-
+  dplyr::summarize(winperc = sum(Result)/n())
 group_super$WinProb <- as.numeric(as.character(group_super$WinProb))
 
 ggplot(group_super, aes(y = winperc*100, x = WinProb, col = "True Performance")) +
     geom_line() +
     geom_abline(aes(slope = 1, intercept = 0, colour = "Expected Performance")) +
     ggtitle("Expected Win Probability versus True Win Probability") +
-    scale_color_manual(values = c('True Performance' = 'darkblue', "Expected Performance" = "red")) +
+    scale_color_manual(values = c('True Performance' = 'darkblue',
+                                  "Expected Performance" = "red")) +
+    theme_bw() +
+    labs(x = "Expected Win Percentage", y = "True Win Percentage")
+
+# Split up by home and away teams; same procedure as above
+vsuper_combo <- data_frame(df$VResult, df$VMoney)
+names(vsuper_combo) <- c("VResult", "VWinProb")
+hsuper_combo <- data_frame(df$HResult, df$HMoney)
+names(hsuper_combo) <- c("HResult", "HWinProb")
+
+vsuper_combo$VWinProb <- round_any(vsuper_combo$VWinProb, 2, f = floor) + 1
+vsuper_combo$VWinProb <- as.factor(vsuper_combo$VWinProb)
+hsuper_combo$HWinProb <- round_any(hsuper_combo$HWinProb, 2, f = floor) + 1
+hsuper_combo$HWinProb <- as.factor(hsuper_combo$HWinProb)
+
+vgroup_super <- vsuper_combo %>% group_by(VWinProb) %>%
+  dplyr::summarize(vwinperc = sum(VResult)/n())
+hgroup_super <- hsuper_combo %>% group_by(HWinProb) %>%
+  dplyr::summarize(hwinperc = sum(HResult)/n())
+vgroup_super$VWinProb <- as.numeric(as.character(vgroup_super$VWinProb))
+hgroup_super$HWinProb <- as.numeric(as.character(hgroup_super$HWinProb))
+
+manual <- data_frame("HWinProb" = 1, "hwinperc" = 0)
+hgroup_super <- rbind(manual, hgroup_super)
+
+group_super = cbind(vgroup_super, hgroup_super)
+
+ggplot(group_super) +
+    geom_line(aes(y = vwinperc*100, x = VWinProb, col = "Vis True Performance")) +
+    geom_line(aes(y = hwinperc*100, x = VWinProb, col = "Home True Performance")) +
+    geom_abline(aes(slope = 1, intercept = 0, colour = "Expected Performance")) +
+    ggtitle("Expected Win Probability versus True Win Probability") +
+    scale_color_manual(values = c('Vis True Performance' = 'darkblue',
+                                  'Home True Performance' = 'brown',
+                                  "Expected Performance" = "red")) +
     theme_bw() +
     labs(x = "Expected Win Percentage", y = "True Win Percentage")
 ```
 
 
 
+As expected, there is not much room for profit, as the true win probability is almost always below the expected win probability. When this is the case, the payouts for a successful bet will be smaller than the true correspondance to risk that you took. However, I do see a small opening for betting on a visiting team with an expected win probability between approximately 35% and 45%. We can see that the line peaks slightly above the win probability in this region. I will investigate this further.
 
-From the graph, we can see that there is a very small region where the true win percentage was above the expected win percentage. This means that betting on teams in this region offered an opportunity for profit. I will investigate this further.
+
+### Backtesting Betting System
 
 
+To do this, I will run through the data frame, and if a game matches the criteria (visiting team's expected win probability is between 35-45%), I will simulate betting $100 dollars on it. If a game does not match this criteria, I will not place a bet on that game, and the profit/loss balance will be the same as the previous games profit/loss balance.
+
+I will plot this time series data using dygraphs. 
 
 ```{r}
-
+# Simulates betting
 df$Profit = 0
-
-for (i in 1:length(df$birth)){
-
-  
-}
-
-
-df$HResult = df$VF < df$HF
-df$Tie <- (df$VF == df$HF)
-df$Tie[df$Tie == TRUE] <- NA
-df <- df[complete.cases(df), ]
-
-result_df <- df %>% select(VResult, HResult)
-combined_v <- gather(result_df, key = "V/H", value = "Result")
-
-group_df <- df %>% select(VMoney, HMoney)
-combined_g <- gather(group_df, key = "V/H", value = "winprob")
-
-# this makes the data frame that bins by every 2 percent change in win probability
-super_combo <- data_frame(combined_v$Result, combined_g$winprob)
-names(super_combo) <- c("Result", "WinProb")
-
-super_combo$WinProb <- round_any(super_combo$WinProb, 1, f = floor) + 0.5
-super_combo$WinProb <- as.factor(super_combo$WinProb)
-
-group_super <- super_combo %>% group_by(WinProb) %>% 
-  dplyr::summarize(games = n(), wins = sum(Result), winperc = sum(Result)/n())
-
-
-group_super$WinProb <- as.numeric(as.character(group_super$WinProb))
-
-
-
-
-
-
-
-
-
-# _____________________
-xts_df <- data_frame(aapl$date, aapl$close)
-names(xts_df) <- c("date", "Gain")
-xts_df$Loss <- aapl$close
-xts_df$date <- as.Date(xts_df$date)
-xts_df$Gain[xts_df$Gain < xts_df$Gain[1]] <- NA
-xts_df$Loss[xts_df$Loss >= xts_df$Gain[1]] <- NA
-
-for (i in 2:(nrow(xts_df))) {
-  if (is.na(xts_df$Gain[i]) && is.na(xts_df$Loss[i-1])) {
-    xts_df$Gain[i] <- xts_df$Loss[i]
+for (i in 2:length(df$Profit)){
+  if (df$VMoney[i] > 35 && df$VMoney[i] < 45) {
+    if (df$VResult[i] == TRUE) {
+      df$Profit[i] <- df$Profit[i - 1] + (((100 - df$VMoney[i])/(df$VMoney[i]))*100)
+    }
+    else {
+      df$Profit[i] <- df$Profit[i - 1] - 100
+    }
   }
-  else if (is.na(xts_df$Loss[i]) && is.na(xts_df$Gain[i-1])) {
-    xts_df$Loss[i] <- xts_df$Gain[i]
+  else{
+    df$Profit[i] <- df$Profit[i - 1]
   }
 }
 
-xts_df <- xts(xts_df, order.by = xts_df$date)
-
-dygraph(xts_df, main = "Closing Prices of AAPL since January 2, 2008", xlab = "Date", ylab = "Stock Price ($)") %>%
-  dySeries("Loss", fillGraph = TRUE, color = "red") %>%
-  dySeries("Gain", fillGraph = TRUE, color = "green") %>%
-  dyLegend(hideOnMouseOut = FALSE) %>%
-  dyAxis(name = "x", axisLineWidth = 3,  drawGrid = FALSE) %>%
-  dyAxis(name = "y", axisLineWidth = 3, valueRange = c(min(xts_df$Loss), max(xts_df$gain))) %>%
-  dyRangeSelector()
+ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
+    geom_line() +
+    geom_ribbon(aes(x = Date, ymax = Profit), ymin = 0, alpha=0.3,
+                fill = "darkgreen", color = "darkgreen") +
+    geom_hline(aes(yintercept = max(Profit), colour = "High"),
+               alpha = 0.5, lwd = 1) +
+    geom_hline(aes(yintercept = min(Profit), colour = "Low"),
+               alpha = 0.5, lwd = 1) +
+    geom_hline(aes(yintercept = Profit[14186], colour = "Finish"),
+               alpha = 0.5, lwd = 1) +
+    ggtitle("Expected Win Probability Versus True Win Probability") +
+    #scale_x_date(limits = as.Date(c('2018-01-01','2019-01-01'))) +
+    scale_color_manual(values = c('Profit' = 'darkgreen', "Low" = "red",
+                                  "High" = "blue", "Finish" = "black")) +
+    theme_bw() +
+    labs(x = "Date", y = "Running Profit")
 ```
 
 
-
-
-
-
+Would you look at that! This shows that if you bet \$100 on every NBA game where the visiting team had an expected win probability between 35-45%, you would be up nearly \$6000. Not only that, but you would have never been in the red. Quite the insight. Given the amount of variables in this data set, it would be fascinating to investigate which ones reveal betting systems that would have been most profitable over time. This graph in particular also shows some cyclical patterns, which leads me to speculate that the time of the season may have an influence on how accurately the market is able to determine the expected win probabilities of teams.
 
 
 
