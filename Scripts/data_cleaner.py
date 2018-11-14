@@ -10,7 +10,7 @@ import seaborn as sns
 import os
 
 df = pd.read_csv("../Data/combined.csv")
-df = df.reset_index(drop=True).drop(columns=["Unnamed: 0", "Rot"])
+df = df.reset_index(drop=True).drop(columns=["Unnamed: 0"])
 
 # Make spelling consistent; replace NewJersey --> Brooklyn
 df = df.replace(to_replace="NewJersey", value="Brooklyn")
@@ -34,39 +34,22 @@ df = df.replace(to_replace="NL", value=np.nan)
 df[["Open", "Close", "ML", "2H"]] = df[["Open", "Close", "ML", "2H"]].astype(float)
 
 
-# Adds season start year (07-08 season would just add 2007 for all) to all dates
-year = "2007"
-len_last = 4
-for i in range(len(df)):
-    if len(str(df.loc[df.index[i], "Date"])) > len_last:  # this checks when there's a jump in months since last game
-        year = str(int(year) + 1)
-    len_last = len(str(df.loc[df.index[i], "Date"]))
-    df.loc[df.index[i], "Date"] = str(df.loc[df.index[i], "Date"]) + year
-
-os.system("say 'finished adding seasons'")
-
 # Converts to dates to date object; converts feb 29 days to feb 28 as these were only errors
-for i in range(len(df)):
-    try:
-        df.loc[df.index[i], "Date"] = dt.datetime.strptime(df.loc[df.index[i], "Date"], "%m%d%Y").date()
-    except ValueError:
-        df.loc[df.index[i], "Date"] = str(int(df.loc[df.index[i], "Date"]) - 10000)
-        df.loc[df.index[i], "Date"] = dt.datetime.strptime(df.loc[df.index[i], "Date"], "%m%d%Y").date()
-
-os.system("say 'finished converting dates'")
+df['Date'] = df['Date'].astype(str)
+df['Date'] = df['Date'].apply(lambda x: dt.datetime.strptime(x, "%m%d%Y"))
 
 
 # MAKE TIDY DATA FRAME
 # columns of new data frame that has one game per row
-tidy = pd.DataFrame(columns=["Date", "V", "H", "V1", "V2", "V3", "V4", "H1", "H2", "H3", "H4", "VF", "HF",
+tidy = pd.DataFrame(columns=["Date", "SZN", "V", "H", "V1", "V2", "V3", "V4", "H1", "H2", "H3", "H4", "VF", "HF",
                              "OUOpen", "OUClose", "VSpreadOpen", "HSpreadOpen", "VSpreadClose", "HSpreadClose",
                              "VMoney", "HMoney", "OU2H", "VSpread2H", "HSpread2H"])
 
 for i in range(int(len(df)/2)-1):
     # only fills in until HF
-    row = [df['Date'][i*2], df['Team'][i*2], df['Team'][i*2+1], df['1st'][i*2], df['2nd'][i*2], df['3rd'][i*2],
-           df['4th'][i*2], df['1st'][i*2+1], df['2nd'][i*2+1], df['3rd'][i*2+1], df['4th'][i*2+1], df['Final'][i*2],
-           df['Final'][i*2+1]]
+    row = [df['Date'][i*2], df['Season'][i*2], df['Team'][i*2], df['Team'][i*2+1], df['1st'][i*2], df['2nd'][i*2],
+           df['3rd'][i*2], df['4th'][i*2], df['1st'][i*2+1], df['2nd'][i*2+1], df['3rd'][i*2+1], df['4th'][i*2+1],
+           df['Final'][i*2], df['Final'][i*2+1]]
 
     # Adds OUOpen
     if df["Open"][i*2] > df["Open"][i*2+1]:
@@ -133,17 +116,15 @@ tidy.iloc[:, 3:11] = tidy.iloc[:, 3:11][tidy.iloc[:, 3:11] < 70]
 tidy.iloc[:, 3:11] = tidy.iloc[:, 3:11][tidy.iloc[:, 3:11] > 0]
 tidy.OUOpen = tidy.OUOpen[tidy.OUOpen > 100]
 tidy = tidy.reset_index(drop=True)
-tidy.iloc[:, 3:] = tidy.iloc[:, 3:].astype(float)
-tidy.OUOpen[tidy.OUOpen == tidy.OUOpen.min()] = tidy.OUClose[tidy.OUOpen == tidy.OUOpen.min()]
+tidy.iloc[:, 4:] = tidy.iloc[:, 4:].astype(float)
+tidy.loc[tidy.OUOpen == tidy.OUOpen.min(), "OUOpen"] = tidy.loc[tidy.OUOpen == tidy.OUOpen.min(), "OUClose"]
 tidy.loc[df.index[5598], 'OU2H'] = round(tidy[tidy.OUClose.between(197, 198)].OU2H.mean()*2)/2
 tidy.dropna(axis=0, how='any', inplace=True)
 
 tidy.loc[df.index[11958], 'VF'] = tidy.loc[df.index[11958], ['V1', 'V2', 'V3', 'V4']].sum()
 tidy.loc[df.index[11958], 'HF'] = tidy.loc[df.index[11958], ['H1', 'H2', 'H3', 'H4']].sum()
 
-tidy.to_csv("../Data/tidy.csv")
-
-os.system("say 'finished full thing'")
+tidy.to_csv("../Data/tidy.csv", index_label="Index")
 
 
 # Quick graphs to check for outliers:

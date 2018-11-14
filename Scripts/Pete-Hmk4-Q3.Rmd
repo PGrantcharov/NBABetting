@@ -1,0 +1,205 @@
+---
+title: "Hmk4-Q3"
+author: "Peter Grantcharov"
+date: "11/13/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# BASICS
+
+### Data Description
+
+This data set contains the scoring data AND sports betting data for all NBA games played since the start of the 2007-2008 season, to the conclusion of the 2017-2018 season. This has been preprocessed (cleaned, tidied) in Python (python scripts will be included for final project), and as such, I will only import the tidy data frame.
+
+The column name descriptions are as follows:
+
+V = Visiting team
+
+H = Home team
+
+(V/H)1-(V/H)4 = Visiting/Home team score in quarters 1-4
+
+(V/H)F = Visiting/Home team final scores *note, may be greater than sum of quarters if game went to overtime
+
+OU(Open/Close) = Over/under betting line for total number of points in the game when books opened and closed
+
+(V/H)Spread(Open/Close) = Spread betting line (expected number of points team will win by (if <0) or lose by (if >0))
+
+(V/H)Money = Moneyline for game; is in effect the outright win probability for (V/H) team with a transformation applied
+
+(OU/Spread)2H = Same definitions as above, but for only the second half of the game
+
+
+### Getting Data
+
+With that established, let's get the data. Of all the variables described above, I am particular interested in investigating how the moneylines (a disguised version of win probability) pair up with the true game outcomes. As such, I will select out the relevant columns. I will also convert the moneylines to their corresponding win probabilities, in percentages from 0% to 100%
+
+```{r }
+library(plyr)
+library(tidyverse)
+full_df <- read_csv("../Data/tidy.csv")
+df <- full_df %>% select(Date, V, H, VF, HF, VMoney, HMoney)
+
+df$VMoney[df$VMoney > 0] <- (100/(df$VMoney[df$VMoney > 0] + 100))*100
+df$HMoney[df$HMoney > 0] <- (100/(df$HMoney[df$HMoney > 0] + 100))*100
+df$VMoney[df$VMoney < 0] <- ((df$VMoney[df$VMoney < 0])/(df$VMoney[df$VMoney < 0] - 100))*100
+df$HMoney[df$HMoney < 0] <- ((df$HMoney[df$HMoney < 0])/(df$HMoney[df$HMoney < 0] - 100))*100
+
+
+head(df)
+```
+
+
+### Data Distribution
+
+
+```{r}
+
+winprobs <- df %>% select(VMoney, HMoney)
+combined <- gather(winprobs, key = "Vis/Hom", value = "Prob")
+
+
+ggplot(data = combined) + 
+  geom_density(aes(x = Prob), lwd = 1, show.legend = TRUE) +
+  labs(x = "Win Probability", y = "Density",
+       title = "                                   Density Graph of Win Probabilities") +
+  theme_bw()
+
+
+ggplot(data = df) + 
+  geom_density(aes(x = VMoney, y = ..density.., color = "away"), lwd = 1) +
+  geom_density(aes(x = HMoney, y = ..density.., color = "home"), lwd = 1) + 
+  labs(x = "Win Probability", y = "Density",
+       title = "     Density Graph of Win Probabilities for Home and Away Teams") +
+  scale_color_manual(values = c('away' = 'blue', 'home' = 'red')) +
+  theme_bw()
+
+```
+
+
+
+
+```{r}
+# create boolean columns that contain whether visiting team or home team won; remove ties
+df$VResult = df$VF > df$HF
+df$HResult = df$VF < df$HF
+df$Tie <- (df$VF == df$HF)
+df$Tie[df$Tie == TRUE] <- NA
+df <- df[complete.cases(df), ]
+
+result_df <- df %>% select(VResult, HResult)
+combined_v <- gather(result_df, key = "V/H", value = "Result")
+
+group_df <- df %>% select(VMoney, HMoney)
+combined_g <- gather(group_df, key = "V/H", value = "winprob")
+
+# this makes the data frame that bins by every 2 percent change in win probability
+super_combo <- data_frame(combined_v$Result, combined_g$winprob)
+names(super_combo) <- c("Result", "WinProb")
+
+super_combo$WinProb <- round_any(super_combo$WinProb, 1, f = floor) + 0.5
+super_combo$WinProb <- as.factor(super_combo$WinProb)
+
+group_super <- super_combo %>% group_by(WinProb) %>% 
+  dplyr::summarize(games = n(), wins = sum(Result), winperc = sum(Result)/n())
+
+group_super$WinProb <- as.numeric(as.character(group_super$WinProb))
+
+ggplot(group_super, aes(y = winperc*100, x = WinProb, col = "True Performance")) +
+    geom_line() +
+    geom_abline(aes(slope = 1, intercept = 0, colour = "Expected Performance")) +
+    ggtitle("Expected Win Probability versus True Win Probability") +
+    scale_color_manual(values = c('True Performance' = 'darkblue', "Expected Performance" = "red")) +
+    theme_bw() +
+    labs(x = "Expected Win Percentage", y = "True Win Percentage")
+```
+
+
+
+
+From the graph, we can see that there is a very small region where the true win percentage was above the expected win percentage. This means that betting on teams in this region offered an opportunity for profit. I will investigate this further.
+
+
+
+```{r}
+
+df$Profit = 0
+
+for (i in 1:length(df$birth)){
+
+  
+}
+
+
+df$HResult = df$VF < df$HF
+df$Tie <- (df$VF == df$HF)
+df$Tie[df$Tie == TRUE] <- NA
+df <- df[complete.cases(df), ]
+
+result_df <- df %>% select(VResult, HResult)
+combined_v <- gather(result_df, key = "V/H", value = "Result")
+
+group_df <- df %>% select(VMoney, HMoney)
+combined_g <- gather(group_df, key = "V/H", value = "winprob")
+
+# this makes the data frame that bins by every 2 percent change in win probability
+super_combo <- data_frame(combined_v$Result, combined_g$winprob)
+names(super_combo) <- c("Result", "WinProb")
+
+super_combo$WinProb <- round_any(super_combo$WinProb, 1, f = floor) + 0.5
+super_combo$WinProb <- as.factor(super_combo$WinProb)
+
+group_super <- super_combo %>% group_by(WinProb) %>% 
+  dplyr::summarize(games = n(), wins = sum(Result), winperc = sum(Result)/n())
+
+
+group_super$WinProb <- as.numeric(as.character(group_super$WinProb))
+
+
+
+
+
+
+
+
+
+# _____________________
+xts_df <- data_frame(aapl$date, aapl$close)
+names(xts_df) <- c("date", "Gain")
+xts_df$Loss <- aapl$close
+xts_df$date <- as.Date(xts_df$date)
+xts_df$Gain[xts_df$Gain < xts_df$Gain[1]] <- NA
+xts_df$Loss[xts_df$Loss >= xts_df$Gain[1]] <- NA
+
+for (i in 2:(nrow(xts_df))) {
+  if (is.na(xts_df$Gain[i]) && is.na(xts_df$Loss[i-1])) {
+    xts_df$Gain[i] <- xts_df$Loss[i]
+  }
+  else if (is.na(xts_df$Loss[i]) && is.na(xts_df$Gain[i-1])) {
+    xts_df$Loss[i] <- xts_df$Gain[i]
+  }
+}
+
+xts_df <- xts(xts_df, order.by = xts_df$date)
+
+dygraph(xts_df, main = "Closing Prices of AAPL since January 2, 2008", xlab = "Date", ylab = "Stock Price ($)") %>%
+  dySeries("Loss", fillGraph = TRUE, color = "red") %>%
+  dySeries("Gain", fillGraph = TRUE, color = "green") %>%
+  dyLegend(hideOnMouseOut = FALSE) %>%
+  dyAxis(name = "x", axisLineWidth = 3,  drawGrid = FALSE) %>%
+  dyAxis(name = "y", axisLineWidth = 3, valueRange = c(min(xts_df$Loss), max(xts_df$gain))) %>%
+  dyRangeSelector()
+```
+
+
+
+
+
+
+
+
+

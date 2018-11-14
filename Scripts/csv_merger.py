@@ -5,9 +5,27 @@ file_names = os.listdir("../Data/Raw")
 file_names.sort()
 
 dfs = []
+start_szn = 2007
 for i in range(len(file_names)):
-    dfs.append(pd.ExcelFile("../Data/Raw/" + file_names[i]).parse("Sheet1"))
+    if file_names[i][0] == ".":
+        continue
+    sheet = pd.ExcelFile("../Data/Raw/" + file_names[i]).parse("Sheet1")
+
+    sheet.loc[:, "Date"] = sheet.loc[:, "Date"].astype(int)
+    sheet.loc[sheet.Date == 429, "Date"] = sheet.loc[sheet.Date == 429, "Date"] - 1
+    sheet.loc[sheet.Date > 1000, "Date"] = sheet.loc[sheet.Date > 1000, "Date"].astype(str) + str(start_szn)
+
+    sheet.loc[:, "Date"] = sheet.loc[:, "Date"].astype(int)
+    sheet.loc[sheet.Date < 1000, "Date"] = "0" + sheet.loc[sheet.Date < 1000, "Date"].astype(str) + str(start_szn + 1)
+    sheet.loc[:, "Date"] = sheet.loc[:, "Date"].astype(str)
+    sheet.rename(columns={"Rot": "Season"}, inplace=True)
+
+    sheet.Season = start_szn
+    start_szn += 1
+
+    dfs.append(sheet)
 
 combined = pd.concat(dfs)
 
 combined.to_csv("../Data/combined.csv")
+
