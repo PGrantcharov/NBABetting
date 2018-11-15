@@ -2,8 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="435764a0-e7c9-49f0-947e-b96fa040144f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../Data/combined.csv" beforeDir="false" afterPath="$PROJECT_DIR$/../Data/combined.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Data/tidy.csv" beforeDir="false" afterPath="$PROJECT_DIR$/../Data/tidy.csv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Pete-Hmk4-Q3.Rmd" beforeDir="false" afterPath="$PROJECT_DIR$/Pete-Hmk4-Q3.Rmd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analyses.py" beforeDir="false" afterPath="$PROJECT_DIR$/analyses.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/csv_merger.py" beforeDir="false" afterPath="$PROJECT_DIR$/csv_merger.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/data_cleaner.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_cleaner.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -16,57 +20,58 @@
     <session id="1314632113">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="5" />
+          <entry key="project.closed" value="7" />
           <entry key="project.open.time.1" value="1" />
           <entry key="project.open.time.2" value="4" />
-          <entry key="project.open.time.3" value="2" />
-          <entry key="project.opened" value="7" />
+          <entry key="project.open.time.3" value="3" />
+          <entry key="project.opened" value="8" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="5" />
+          <entry key="py" value="6" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="5" />
+          <entry key="Python" value="6" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="Python Console" value="6480" />
-          <entry key="py" value="5242" />
+          <entry key="Python Console" value="6752" />
+          <entry key="py" value="6900" />
           <entry key="txt" value="55" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="55" />
-          <entry key="Python" value="11722" />
+          <entry key="Python" value="13652" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/data_cleaner.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="483">
-              <caret line="127" column="27" selection-start-line="127" selection-start-column="27" selection-end-line="127" selection-end-column="27" />
+            <state relative-caret-position="332">
+              <caret line="117" selection-start-line="117" selection-end-line="117" />
               <folding>
+                <element signature="n#!!doc" />
                 <element signature="e#307#326#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/analyses.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="210">
-              <caret line="14" selection-start-line="14" selection-end-line="14" />
+            <state relative-caret-position="345">
+              <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
               </folding>
@@ -77,8 +82,11 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/csv_merger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="10" column="25" selection-start-line="10" selection-start-column="25" selection-end-line="10" selection-end-column="25" />
+            <state relative-caret-position="450">
+              <caret line="32" selection-start-line="32" selection-end-line="32" />
+              <folding>
+                <element signature="e#0#19#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -92,21 +100,27 @@
       </list>
     </option>
   </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>rot</find>
+      <find>tidy.iloc[:, 3:] = tidy.iloc[:, 3:].astype(float)</find>
+    </findStrings>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/analyses.py" />
+        <option value="$PROJECT_DIR$/csv_merger.py" />
         <option value="$PROJECT_DIR$/data_cleaner.py" />
+        <option value="$PROJECT_DIR$/analyses.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="13" />
     <option name="y" value="23" />
-    <option name="width" value="1602" />
+    <option name="width" value="1614" />
     <option name="height" value="922" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -145,7 +159,7 @@
     </option>
   </component>
   <component name="RunManager">
-    <configuration name="data_cleaner" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="data_cleaner" type="PythonConfigurationType" factoryName="Python">
       <module name="Scripts" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -166,11 +180,6 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Python.data_cleaner" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -203,10 +212,9 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="13" y="23" width="1602" height="922" extended-state="0" />
-    <editor active="true" />
+    <frame x="0" y="23" width="1614" height="922" extended-state="0" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.22960152" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.22787194" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -266,29 +274,40 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/csv_merger.py">
+    <entry file="file://$USER_HOME$/anaconda3/envs/progs/lib/python3.7/site-packages/xlrd/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="10" column="25" selection-start-line="10" selection-start-column="25" selection-end-line="10" selection-end-column="25" />
+        <state relative-caret-position="363">
+          <caret line="172" column="53" selection-start-line="172" selection-start-column="53" selection-end-line="172" selection-end-column="53" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/analyses.py">
+    <entry file="file://$PROJECT_DIR$/data_cleaner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="14" selection-start-line="14" selection-end-line="14" />
+        <state relative-caret-position="332">
+          <caret line="117" selection-start-line="117" selection-end-line="117" />
+          <folding>
+            <element signature="n#!!doc" />
+            <element signature="e#307#326#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/csv_merger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="450">
+          <caret line="32" selection-start-line="32" selection-end-line="32" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/data_cleaner.py">
+    <entry file="file://$PROJECT_DIR$/analyses.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="483">
-          <caret line="127" column="27" selection-start-line="127" selection-start-column="27" selection-end-line="127" selection-end-column="27" />
+        <state relative-caret-position="345">
+          <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
           <folding>
-            <element signature="e#307#326#0" expanded="true" />
+            <element signature="e#0#19#0" expanded="true" />
           </folding>
         </state>
       </provider>
