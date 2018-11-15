@@ -4,6 +4,8 @@ author: "Peter Grantcharov"
 date: "11/13/2018"
 output:
   pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -12,6 +14,8 @@ library(plyr)
 library(tidyverse)
 library(dygraphs)
 library(xts)
+library(GGally)
+library(gridExtra)
 ```
 
 
@@ -58,23 +62,28 @@ head(df)
 ### Data Distribution
 
 As a starting point for this analysis, I would like to see the distribution of the win probabilities. Further, I suspect that Home and Away teams may have different distributions, so I will separate those in a separate graph. 
-```{r}
+```{r fig.width=15}
 winprobs <- df %>% select(VMoney, HMoney)
 combined <- gather(winprobs, key = "Vis/Hom", value = "Prob")
 
-ggplot(data = combined) + 
-  geom_density(aes(x = Prob), lwd = 1, color = "brown") +
+g1 <- ggplot(data = combined) + 
+  geom_density(aes(x = Prob, color = "All Games"), lwd = 1) +
   labs(x = "Win Probability", y = "Density",
-       title = "                              Density Graph of Win Probabilities Over All Games") +
+       title = "Density Graph of Win Probabilities Over All Games",
+       color = "Legend:") +
+  scale_color_manual(values = c("All Games" = 'brown')) +
   theme_bw()
 
-ggplot(data = df) + 
-  geom_density(aes(x = VMoney, y = ..density.., color = "away"), lwd = 1) +
-  geom_density(aes(x = HMoney, y = ..density.., color = "home"), lwd = 1) + 
+g2 <- ggplot(data = df) + 
+  geom_density(aes(x = VMoney, y = ..density.., color = "Away"), lwd = 1) +
+  geom_density(aes(x = HMoney, y = ..density.., color = "Home"), lwd = 1) + 
   labs(x = "Win Probability", y = "Density",
-       title = "     Density Graph of Win Probabilities for Home and Away Teams") +
-  scale_color_manual(values = c('away' = 'blue', 'home' = 'red')) +
+       title = "Density Graph of Win Probabilities for Home and Away Teams", 
+       color = "Legend:") +
+  scale_color_manual(values = c('Away' = 'blue', 'Home' = 'red')) +
   theme_bw()
+
+grid.arrange(g1, g2, ncol = 2, widths = c(5, 5))
 ```
 
 
@@ -83,7 +92,7 @@ From this graph, we can see that my suspicion was indeed correct. Home teams are
 ### Truth vs. Prediction
 A follow-up question from observing these distributions, though, is just how accurate are these expected win probabilities with the true outcomes? To study this, I will create a line graph that plots the expected win probability against the true win probability. I will also include a standard y = x line to make it easy to visually observe where the possible disparities lie. 
 
-```{r}
+```{r fig.width=15}
 # create boolean columns that contain whether visiting team or home team won; remove ties
 df$VResult = df$VF > df$HF
 df$HResult = df$VF < df$HF
@@ -108,7 +117,7 @@ group_super <- super_combo %>% group_by(WinProb) %>%
   dplyr::summarize(winperc = sum(Result)/n())
 group_super$WinProb <- as.numeric(as.character(group_super$WinProb))
 
-ggplot(group_super, aes(y = winperc*100, x = WinProb, col = "True Performance")) +
+g1 <- ggplot(group_super, aes(y = winperc*100, x = WinProb, col = "True Performance")) +
     geom_line() +
     geom_abline(aes(slope = 1, intercept = 0, colour = "Expected Performance")) +
     ggtitle("Expected Win Probability versus True Win Probability") +
@@ -140,7 +149,7 @@ hgroup_super <- rbind(manual, hgroup_super)
 
 group_super = cbind(vgroup_super, hgroup_super)
 
-ggplot(group_super) +
+g2 <- ggplot(group_super) +
     geom_line(aes(y = vwinperc*100, x = VWinProb, col = "Vis True Performance")) +
     geom_line(aes(y = hwinperc*100, x = VWinProb, col = "Home True Performance")) +
     geom_abline(aes(slope = 1, intercept = 0, colour = "Expected Performance")) +
@@ -150,6 +159,9 @@ ggplot(group_super) +
                                   "Expected Performance" = "red")) +
     theme_bw() +
     labs(x = "Expected Win Percentage", y = "True Win Percentage")
+
+grid.arrange(g1, g2, ncol = 2, widths = c(5, 5))
+
 ```
 
 
@@ -182,21 +194,21 @@ for (i in 2:length(df$Profit)){
 }
 
 ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
-    geom_line() +
+    geom_line(lwd = 0.1) +
     geom_ribbon(aes(x = Date, ymax = Profit), ymin = 0, alpha=0.3,
                 fill = "darkgreen", color = "darkgreen") +
     geom_hline(aes(yintercept = max(Profit), colour = "High"),
-               alpha = 0.5, lwd = 1) +
+               alpha = 0.8, lwd = 1, linetype="dotdash") +
     geom_hline(aes(yintercept = min(Profit), colour = "Low"),
-               alpha = 0.5, lwd = 1) +
+               alpha = 0.8, lwd = 1, linetype="dotdash") +
     geom_hline(aes(yintercept = Profit[14186], colour = "Finish"),
-               alpha = 0.5, lwd = 1) +
-    ggtitle("Expected Win Probability Versus True Win Probability") +
+               alpha = 0.8, lwd = 1, linetype="dotdash") +
+    ggtitle("Profit Over Time by Betting on Visiting Team with Win Odds Between 35-45%") +
     #scale_x_date(limits = as.Date(c('2018-01-01','2019-01-01'))) +
     scale_color_manual(values = c('Profit' = 'darkgreen', "Low" = "red",
                                   "High" = "blue", "Finish" = "black")) +
     theme_bw() +
-    labs(x = "Date", y = "Running Profit")
+    labs(x = "Date", y = "Running Profit", color = "Legend:")
 ```
 
 
