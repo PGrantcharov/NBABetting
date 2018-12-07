@@ -6,7 +6,6 @@
 import pandas as pd
 import numpy as np
 import seaborn as sns
-import os
 
 df = pd.read_csv("../Data/combined.csv")
 df = df.reset_index(drop=True).drop(columns=["Unnamed: 0"])
@@ -18,6 +17,7 @@ df = df.replace(to_replace="LA Clippers", value="LAClippers")
 
 # fix detroit v. phoenix game scores; a few bad entry fixes
 df.loc[df.index[2916:2918], ["1st", "2nd"]] = [[23, 23], [31, 30]]
+
 df.loc[df.index[1974], "Open"] = 197.5
 df.loc[df.index[11192], "2H"] = np.nan
 df.loc[df.index[23520], 'Open'] = 195.5
@@ -101,9 +101,12 @@ for i in range(int(len(df)/2)-1):
 
     tidy.loc[i] = row
 
+tidy.to_csv("../Data/intermediate.csv", index_label="Index")
+
+
 # Removes/fixes a few outliers
-tidy.iloc[:, 3:11] = tidy.iloc[:, 3:11][tidy.iloc[:, 3:11] < 70]
-tidy.iloc[:, 3:11] = tidy.iloc[:, 3:11][tidy.iloc[:, 3:11] > 0]
+tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] < 70]
+tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] > 0]
 tidy.OUOpen = tidy.OUOpen[tidy.OUOpen > 100]
 tidy = tidy.reset_index(drop=True)
 tidy.iloc[:, 4:] = tidy.iloc[:, 4:].astype(float)

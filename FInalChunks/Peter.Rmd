@@ -7,7 +7,113 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(plyr)
+library(tidyverse)
+library(dygraphs)
+library(xts)
+library(GGally)
+library(gridExtra)
+
+combined = read_csv("../Data/combined.csv")[-c(1)]
+intermediate = read_csv("../Data/intermediate.csv")
+tidy = read_csv("../Data/tidy.csv")
 ```
 
-## R Markdown
+# Analysis of Quality
+
+### Tidying
+The data, once merged for the past 11 seasons, first had to be converted into a tidy format for it to be possible to conduct any data analysis. More specifically, each individual NBA match in the dataset had separate rows for the two opposing teams. To tidy, then, we had to merge this by adding a few columns so that each data entry (row) was only comprised of one game. 
+
+Before tidying, the CSV looked like this:
+```{r}
+options(dplyr.width = Inf)
+head(combined)
+```
+
+After tidying, the CSV looking like this:
+```{r}
+head(tidy)
+```
+
+This process was quite extensive due to the format of the data. For example, second half betting lines in column "2H" shown above in head(combined), contained two columns worth of data: Over/Under scores and Spreads. Hence, to give each of these features their own columns, an algorithm had to be constructed that assessed whether a given entry contrained Over/Under or Spread data, and thenm filled out the tidy columns accordingly. This data frame conversion can be found below the *# MAKE TIDY DATA FRAME* comment in the python script entitled: "data_cleaner.py".
+
+##Cleaning
+Next, we had to clean the data, primarily for missing values, incorrect entries, and improper data formatting. This process was done entirely in Python. Several of such corrections are shown below (code in Python):
+
+###Team Names:
+By getting a list of the unique team names, we could see a few mistakes that needed correction:
+```{r}
+unique(combined$Team)
+```
+
+Clearly, inconsistencies in spelling (Oklahoma City and LA Clippers) needed to be corrected. Further, the Brooklyn Nets were formerly known as the New Jersey Nets, before an ownership change resulted in their minor relocation. To allow for continuation analyses of the same franchise, all "NewJersey" entries were renamed as "Brooklyn". 
+
+```{python, eval = FALSE, python.reticulate = FALSE}
+# Make spelling consistent; replace NewJersey --> Brooklyn
+df = df.replace(to_replace="NewJersey", value="Brooklyn")
+df = df.replace(to_replace="Oklahoma City", value="OklahomaCity")
+df = df.replace(to_replace="LA Clippers", value="LAClippers")
+```
+
+
+###Pick 'em:
+A convention in sports betting is to name 50/50 bets as "Pick 'em" bets. In this dataset, those bets were denoted as "pk" or "PK". Further, on occasion, sportsbooks will close the book on certain games for a variety of reasons. Such games are denoted as "no line" or "NL" in this dataset. The former were given values of '0' in our data frame, and the latter were given 'NA' values so they could be easily removed later. This process is shown below:
+
+
+```{r}
+# Non-numerical value examples
+head(combined %>% filter(`2H` == 'pk') %>% select(Date, Team, Final,'2H'))
+
+# Bad entries
+combined[1975,"Open"]
+combined[23521,"Open"]
+```
+
+
+```{python, eval = FALSE, python.reticulate = FALSE}
+# Replace all pk odds (i.e. 50/50 outcomes) with 0 so we can make last four columns integers
+df = df.replace(to_replace=["pk", "PK"], value=0)
+df = df.replace(to_replace="NL", value=np.nan)
+
+df.loc[df.index[1974], "Open"] = 197.5
+df.loc[df.index[23520], 'Open'] = 195.5
+```
+
+
+###Bad Entries:
+To located the bad entries, we had to make graphs of the different variables.
+
+
+```{r}
+quarter_scores <- intermediate %>% 
+  select(V1, V2, V3, V4, H1, H2, H3, H4)
+quarter_scores <-gather(quarter_scores, key = "Quarter", value = "Score")
+
+ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
+  geom_boxplot(fill = "brown", color = "black") +
+  ggtitle("Boxplots of Quarter Point Totals") +
+  scale_y_continuous(breaks = scales::pretty_breaks(n=5)) +
+  labs(x = "Quarter",
+  y = "Number of Points",
+  caption = "V = visitor, H = home")
+```
+
+
+
+
+
+
+
+
+
+```{python, eval = FALSE, python.reticulate = FALSE}
+# fix detroit v. phoenix game scores; a few bad entry fixes
+df.loc[df.index[2916:2918], ["1st", "2nd"]] = [[23, 23], [31, 30]]
+df.loc[df.index[1974], "Open"] = 197.5
+df.loc[df.index[11192], "2H"] = np.nan
+df.loc[df.index[23520], 'Open'] = 195.5
+```
+
+
+
 
