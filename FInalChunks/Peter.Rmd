@@ -1,7 +1,7 @@
 ---
-title: "Final Doc"
-author: "Peter Grantcharov"
-date: "12/7/2018"
+title: "Sports Betting Analysis"
+author: "Peter Grantcharov, Fernando Troeman, Po-Chieh Liu"
+date: "12/10/2018"
 output: html_document
 ---
 
@@ -13,6 +13,7 @@ library(dygraphs)
 library(xts)
 library(GGally)
 library(gridExtra)
+library(knitr)
 
 combined = read_csv("../Data/combined.csv")[-c(1)]
 intermediate = read_csv("../Data/intermediate.csv")
@@ -21,24 +22,29 @@ tidy = read_csv("../Data/tidy.csv")
 
 # Analysis of Quality
 
-### Tidying
-The data, once merged for the past 11 seasons, first had to be converted into a tidy format for it to be possible to conduct any data analysis. More specifically, each individual NBA match in the dataset had separate rows for the two opposing teams. To tidy, then, we had to merge this by adding a few columns so that each data entry (row) was only comprised of one game. 
+## Tidying
+The data, once merged for the past 11 seasons, had to be converted into a tidy format for it to be possible to conduct any data analysis. More specifically, each individual NBA match in the dataset had separate rows for the two opposing teams. To tidy, then, we had to merge this by adding a few columns so that each data entry (row) was only comprised of one game. 
 
 Before tidying, the CSV looked like this:
 ```{r}
 options(dplyr.width = Inf)
-head(combined)
+kable(combined[1:5,], caption = "Untidy Data")
 ```
 
-After tidying, the CSV looking like this:
+After tidying, the CSV looking like this (only columns relevant to visiting team showed for convenience):
 ```{r}
-head(tidy)
+kable(tidy[1:5, c(2, 4, 5, 6, 7, 8, 9, 14, 16, 18, 22, 24, 25)], caption = "Tidy Data")
 ```
 
-This process was quite extensive due to the format of the data. For example, second half betting lines in column "2H" shown above in head(combined), contained two columns worth of data: Over/Under scores and Spreads. Hence, to give each of these features their own columns, an algorithm had to be constructed that assessed whether a given entry contrained Over/Under or Spread data, and thenm filled out the tidy columns accordingly. This data frame conversion can be found below the *# MAKE TIDY DATA FRAME* comment in the python script entitled: "data_cleaner.py".
+This process was quite extensive due to the format of the data. For example, second half betting lines in column "2H" shown above in untidy dataframe, contained two columns worth of data: 
+
+1) Over/Under scores;
+2) Spreads
+
+Hence, to give each of these features their own columns, an algorithm had to be constructed that assessed whether a given entry in "2H" represented Over/Under or Spread data, and then filled out the tidy columns accordingly. This data frame conversion can be found below the *# MAKE TIDY DATA FRAME* comment in the python script entitled: "data_cleaner.py".
 
 ##Cleaning
-Next, we had to clean the data, primarily for missing values, incorrect entries, and improper data formatting. This process was done entirely in Python. Several of such corrections are shown below (code in Python):
+Next, we had to clean the data. The was primarily done to handle the missing values, incorrect entries, and improper data formatting. This process was done entirely in Python. Several of such corrections are shown below (code in Python):
 
 ###Team Names:
 By getting a list of the unique team names, we could see a few mistakes that needed correction:
@@ -57,33 +63,30 @@ df = df.replace(to_replace="LA Clippers", value="LAClippers")
 
 
 ###Pick 'em:
+
 A convention in sports betting is to name 50/50 bets as "Pick 'em" bets. In this dataset, those bets were denoted as "pk" or "PK". Further, on occasion, sportsbooks will close the book on certain games for a variety of reasons. Such games are denoted as "no line" or "NL" in this dataset. The former were given values of '0' in our data frame, and the latter were given 'NA' values so they could be easily removed later. This process is shown below:
 
 
 ```{r}
-# Non-numerical value examples
-head(combined %>% filter(`2H` == 'pk') %>% select(Date, Team, Final,'2H'))
-
-# Bad entries
-combined[1975,"Open"]
-combined[23521,"Open"]
+kable((combined %>% filter(`2H` == 'pk'))[1:5,], caption = "Pick 'em Examples *Notice column '2H'")
+kable(combined[c(1975,23521),], caption = "Faulty Over/Under Cases")
 ```
 
 
 ```{python, eval = FALSE, python.reticulate = FALSE}
-# Replace all pk odds (i.e. 50/50 outcomes) with 0 so we can make last four columns integers
+# Replace all pk odds (i.e. 50/50 outcomes) with 0; correct improper formatted entries
 df = df.replace(to_replace=["pk", "PK"], value=0)
 df = df.replace(to_replace="NL", value=np.nan)
 
-df.loc[df.index[1974], "Open"] = 197.5
-df.loc[df.index[23520], 'Open'] = 195.5
+df.loc[df.index[1975], "Open"] = 197.5
+df.loc[df.index[23521], 'Open'] = 195.5
 ```
 
 
 ###Bad Entries:
-To located the bad entries, we had to make graphs of the different variables.
+To located the bad entries, we found it to be effective to make graphs of the different variables. This process is outlined below:
 
-
+To identify outliers in the quarter scores, we found box plots to be very effective. This was done as follows:
 ```{r}
 quarter_scores <- intermediate %>% 
   select(V1, V2, V3, V4, H1, H2, H3, H4)
@@ -92,28 +95,89 @@ quarter_scores <-gather(quarter_scores, key = "Quarter", value = "Score")
 ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
   geom_boxplot(fill = "brown", color = "black") +
   ggtitle("Boxplots of Quarter Point Totals") +
-  scale_y_continuous(breaks = scales::pretty_breaks(n=5)) +
   labs(x = "Quarter",
   y = "Number of Points",
   caption = "V = visitor, H = home")
 ```
 
+Clearly, negative values are impossible in the context of basketball scores, so those entries were promptly removed. Similarly, other extreme outliers were dropped, while the remaining outliers were assessed individually. Given that our dataset had over 14000 games, and that we were operating under the assumption that these mis-entries occur at random, we did not think that it would be too harmful to be rather loose with removing data entries that weren't cooperating. 
 
-
-
-
-
-
-
-
+The clearning scripts in python:
 ```{python, eval = FALSE, python.reticulate = FALSE}
-# fix detroit v. phoenix game scores; a few bad entry fixes
-df.loc[df.index[2916:2918], ["1st", "2nd"]] = [[23, 23], [31, 30]]
-df.loc[df.index[1974], "Open"] = 197.5
-df.loc[df.index[11192], "2H"] = np.nan
-df.loc[df.index[23520], 'Open'] = 195.5
+# Fix outliers for quarter scores
+tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] < 70]
+tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] > 0]
+```
+
+Resulting distributions:
+
+```{r}
+quarter_scores <- tidy %>% 
+  select(V1, V2, V3, V4, H1, H2, H3, H4)
+quarter_scores <- gather(quarter_scores, key = "Quarter", value = "Score")
+
+ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
+  geom_boxplot(fill = "brown", color = "black") +
+  ggtitle("Boxplots of Quarter Point Totals") +
+  labs(x = "Quarter",
+  y = "Number of Points",
+  caption = "V = visitor, H = home")
+```
+
+As can be seen, the quarter distributions looked much better after applying the corrections.
+
+
+The same process was performed for the Over/Under scores. Before cleaning, the data appeared as follows:
+
+```{r}
+OUs <- intermediate %>% 
+  select(OUOpen, OUClose)
+OUs <- gather(OUs, key = "OpenClose", value = "Value")
+
+ggplot(OUs, aes(x = OpenClose, y = Value)) +
+  geom_boxplot(fill = "brown", color = "black") +
+  ggtitle("Boxplots of Over/Under Scores at the Open and Close") +
+  labs(x = "Open/Close",
+  y = "Over/Under for the Total Number of Points")
+```
+
+The few outliers are very obvious, so they were cleaned by:
+```{python, eval = FALSE, python.reticulate = FALSE}
+# Fix outliers for Over/Under scores
+tidy.OUOpen = tidy.OUOpen[tidy.OUOpen > 100]
 ```
 
 
+Thereafter resulting in the following distributions:
 
+```{r}
+OUs <- tidy %>% 
+  select(OUOpen, OUClose)
+OUs <- gather(OUs, key = "OpenClose", value = "Value")
+
+ggplot(OUs, aes(x = OpenClose, y = Value)) +
+  geom_boxplot(fill = "brown", color = "black") +
+  ggtitle("Boxplots of Over/Under Scores at the Open and Close") +
+  labs(x = "Open/Close",
+  y = "Over/Under for the Total Number of Points")
+```
+
+
+Lastly, we reviewed the distributions of the full game scores to try to identify some mis-entries among those. Again, we found the box plot to be an effective tool for doing so:
+
+```{r}
+Tots <- intermediate %>% 
+  select(VF, HF)
+Tots <- gather(Tots, key = "Visitor/Home", value = "Value")
+
+ggplot(OUs, aes(x = OpenClose, y = Value)) +
+  geom_boxplot(fill = "brown", color = "black") +
+  ggtitle("Boxplots of Game Point Totals") +
+  labs(x = "Visitor/Home Final Score",
+  y = "Total Number of Points")
+```
+
+The outliers that did appear at the top end of these distributions were reviewed independently against official box-score files researched online (via: https://www.basketball-reference.com/boxscores/), and none of them were identified as incorrectly entered into the database.
+
+After performing these steps, and removing rows with missing data, we were pleased enough with our tidy dataset to commence our data exploration!
 
