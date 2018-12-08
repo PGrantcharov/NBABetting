@@ -20,9 +20,91 @@ intermediate = read_csv("../Data/intermediate.csv")
 tidy = read_csv("../Data/tidy.csv")
 ```
 
-# Analysis of Quality
 
-## Tidying
+#1  Introduction
+##1.1  Overview
+In this report, we will investigate a dataset from Sports Book Reviews Online (https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm). This website has scraped sports betting data from online sportsbooks for all NBA basketball seasons since the 2007-2008 season. Further, their databases also contain the game outcomes, so comparisons between betting odds and results can easily be made.
+
+
+##1.2  Motivation
+We chose this topic to satisfy the primal parts of our psyche that are overly stimulated by:
+
+1) Sports
+
+2) Money
+
+3) Gambling
+
+... and of course:
+
+4) Data exploration and visualization
+
+We therefore found this data set to be an excellent suitor for delivering captivating insights. 
+
+
+We are particularly interested in asking questions such as:
+
+  * *How good are the market and the sportsbooks at correctly determining the odds for a given match-up?*
+
+  * *Are there certain betting systems that would have been able to turn a profit if implemented throughout the 11 season span of this dataset?*
+
+##1.3  Group
+Every group member was very curious and committed to answering these questions. Below is an outline of how the responsibilities were divided amongst our group:
+
+
+Peter Grantcharov:
+
+* 
+
+
+Po-Chieh Liu:
+
+*
+
+Fernando Troeman:
+
+*
+
+
+
+
+
+
+#2  Data Description
+##2.1  Data Collection
+The data files were downloaded as individual seasons in different *.xlsx* files from https://www.sportsbookreviewsonline.com/. Sports betting data is a highly valued commodity, so comprehensive and clean open source databases are hard to come by. 
+
+The individual seasons were then stitched together into a single *.csv* file. The script to perform this merger was written in Python, and the code can be found in our GitHub document entitled *csv_merger.py*. It should also be noted that in the process of merging the data, the *Date* column was also transformed to be a date object from the Python package *Datetime* (*Datetime* formated values in CSV files are automatically read as *Date* objects in R). Since the Date object in Python under the *Datetime* package does not consider February 29 as a valid date, this exception was also handled in this merger script. 
+
+##2.2 Dataset Features
+The following columns were included in the raw, untidy dataset:
+
+1) Date - Given in the integer format "MMDD"
+
+2) V/H - Indicates whether team in this row was the visiting team or home team (alternates down the data frame)
+
+3) Team - Team name
+
+4) 1st, 2nd, 3rd, 4th - The amount of points scored by a given team in the 1st, 2nd, 3rd, and 4th quarters, respectively
+
+5) Final - Final score for the full game *Note - not necessarily sum of quarters if the game went to overtime
+
+6) Open - Contains two piece of data; both are determined as soon as the sportsbook opens betting for a given game
+      + The over/under value for the total amount of points in the games (generally around 200)
+      + The expected win margin for the team that is favored to win (hereafter denoted as spread)
+      
+7) Close - Contains the same pieces of data as the "Open" column, but are now representing their respective values when the sportsbook closes betting for a given game 
+
+8) ML - The "moneyline"; if negative, represents how much money a bettor has to bet to win \$100 if the team in the row wins; if positive, represents how much money a better wins on a \$100 bet
+
+9) 2H - Contains the same data as "Open" and "Close", but now only applies to the over/under scores and the win margins for the 2nd half of the game; this value is finalized at the points that sportsbooks close betting for a given game
+
+
+
+
+#3  Analysis of Quality
+
+##3.1  Tidying
 The data, once merged for the past 11 seasons, had to be converted into a tidy format for it to be possible to conduct any data analysis. More specifically, each individual NBA match in the dataset had separate rows for the two opposing teams. To tidy, then, we had to merge this by adding a few columns so that each data entry (row) was only comprised of one game. 
 
 Before tidying, the CSV looked like this:
@@ -43,10 +125,10 @@ This process was quite extensive due to the format of the data. For example, sec
 
 Hence, to give each of these features their own columns, an algorithm had to be constructed that assessed whether a given entry in "2H" represented Over/Under or Spread data, and then filled out the tidy columns accordingly. This data frame conversion can be found below the *# MAKE TIDY DATA FRAME* comment in the python script entitled: "data_cleaner.py".
 
-##Cleaning
+##3.2  Cleaning
 Next, we had to clean the data. The was primarily done to handle the missing values, incorrect entries, and improper data formatting. This process was done entirely in Python. Several of such corrections are shown below (code in Python):
 
-###Team Names:
+###3.2.1  Team Names:
 By getting a list of the unique team names, we could see a few mistakes that needed correction:
 ```{r}
 unique(combined$Team)
@@ -62,7 +144,7 @@ df = df.replace(to_replace="LA Clippers", value="LAClippers")
 ```
 
 
-###Pick 'em:
+###3.2.2  Pick 'em:
 
 A convention in sports betting is to name 50/50 bets as "Pick 'em" bets. In this dataset, those bets were denoted as "pk" or "PK". Further, on occasion, sportsbooks will close the book on certain games for a variety of reasons. Such games are denoted as "no line" or "NL" in this dataset. The former were given values of '0' in our data frame, and the latter were given 'NA' values so they could be easily removed later. This process is shown below:
 
@@ -83,101 +165,112 @@ df.loc[df.index[23521], 'Open'] = 195.5
 ```
 
 
-###Bad Entries:
-To located the bad entries, we found it to be effective to make graphs of the different variables. This process is outlined below:
+###3.2.3  Bad Entries:
+To located the bad entries, we found it to be effective to make graphs of the different variables - particularly box plots given the number of data entries. This was done for each of the numerical variables in the dataset:
 
-To identify outliers in the quarter scores, we found box plots to be very effective. This was done as follows:
-```{r}
+Since all eight columns for quarter scores have approximately the same distributions, we could kill eight birds with one stone and plot them all at once. By identifying the mis-entries in these columns, we applied a generic threshold for all columns to remove the identified outliers. The before and after plots are shown below, with the Python code used to apply the corrections being printed below the graphs. 
+
+```{r fig.width = 12, fig.height=6}
 quarter_scores <- intermediate %>% 
   select(V1, V2, V3, V4, H1, H2, H3, H4)
 quarter_scores <-gather(quarter_scores, key = "Quarter", value = "Score")
 
-ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
+before <- ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
   geom_boxplot(fill = "brown", color = "black") +
-  ggtitle("Boxplots of Quarter Point Totals") +
+  ggtitle("Boxplots of Quarter Point Totals Before Adjustments") +
   labs(x = "Quarter",
   y = "Number of Points",
   caption = "V = visitor, H = home")
+
+quarter_scores <- tidy %>% 
+  select(V1, V2, V3, V4, H1, H2, H3, H4)
+quarter_scores <- gather(quarter_scores, key = "Quarter", value = "Score")
+
+after <- ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
+  geom_boxplot(fill = "brown", color = "black") +
+  ggtitle("Boxplots of Quarter Point Totals After Adjustments") +
+  labs(x = "Quarter",
+  y = "Number of Points",
+  caption = "V = visitor, H = home")
+
+grid.arrange(before, after, ncol = 2, widths = c(9, 9))
 ```
 
 Clearly, negative values are impossible in the context of basketball scores, so those entries were promptly removed. Similarly, other extreme outliers were dropped, while the remaining outliers were assessed individually. Given that our dataset had over 14000 games, and that we were operating under the assumption that these mis-entries occur at random, we did not think that it would be too harmful to be rather loose with removing data entries that weren't cooperating. 
 
-The clearning scripts in python:
+Excerpt from the clearning script in Python:
 ```{python, eval = FALSE, python.reticulate = FALSE}
 # Fix outliers for quarter scores
 tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] < 70]
 tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] > 0]
 ```
 
-Resulting distributions:
-
-```{r}
-quarter_scores <- tidy %>% 
-  select(V1, V2, V3, V4, H1, H2, H3, H4)
-quarter_scores <- gather(quarter_scores, key = "Quarter", value = "Score")
-
-ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
-  geom_boxplot(fill = "brown", color = "black") +
-  ggtitle("Boxplots of Quarter Point Totals") +
-  labs(x = "Quarter",
-  y = "Number of Points",
-  caption = "V = visitor, H = home")
-```
-
 As can be seen, the quarter distributions looked much better after applying the corrections.
 
+***
 
-The same process was performed for the Over/Under scores. Before cleaning, the data appeared as follows:
+The same process was performed for the Over/Under scores. The pre- and post-cleaning box plots appeared as follows:
 
-```{r}
+```{r fig.width=12, fig.height=6}
 OUs <- intermediate %>% 
   select(OUOpen, OUClose)
 OUs <- gather(OUs, key = "OpenClose", value = "Value")
 
-ggplot(OUs, aes(x = OpenClose, y = Value)) +
+before <- ggplot(OUs, aes(x = OpenClose, y = Value)) +
   geom_boxplot(fill = "brown", color = "black") +
-  ggtitle("Boxplots of Over/Under Scores at the Open and Close") +
+  ggtitle("Boxplots of Over/Under Scores at the Open and Close Before Adjustments") +
   labs(x = "Open/Close",
   y = "Over/Under for the Total Number of Points")
+
+OUs <- tidy %>% 
+  select(OUOpen, OUClose)
+OUs <- gather(OUs, key = "OpenClose", value = "Value")
+
+after <- ggplot(OUs, aes(x = OpenClose, y = Value)) +
+  geom_boxplot(fill = "brown", color = "black") +
+  ggtitle("Boxplots of Over/Under Scores at the Open and Close After Adjustments") +
+  labs(x = "Open/Close",
+  y = "Over/Under for the Total Number of Points")
+
+grid.arrange(before, after, ncol = 2, widths = c(9, 9))
 ```
 
-The few outliers are very obvious, so they were cleaned by:
+The few outliers are very obvious, so they were easily cleaned by:
 ```{python, eval = FALSE, python.reticulate = FALSE}
 # Fix outliers for Over/Under scores
 tidy.OUOpen = tidy.OUOpen[tidy.OUOpen > 100]
 ```
 
-
-Thereafter resulting in the following distributions:
-
-```{r}
-OUs <- tidy %>% 
-  select(OUOpen, OUClose)
-OUs <- gather(OUs, key = "OpenClose", value = "Value")
-
-ggplot(OUs, aes(x = OpenClose, y = Value)) +
-  geom_boxplot(fill = "brown", color = "black") +
-  ggtitle("Boxplots of Over/Under Scores at the Open and Close") +
-  labs(x = "Open/Close",
-  y = "Over/Under for the Total Number of Points")
-```
-
+***
 
 Lastly, we reviewed the distributions of the full game scores to try to identify some mis-entries among those. Again, we found the box plot to be an effective tool for doing so:
 
-```{r}
+```{r fig.width = 12, fig.height=6}
 Tots <- intermediate %>% 
   select(VF, HF)
-Tots <- gather(Tots, key = "Visitor/Home", value = "Value")
+Tots <- gather(Tots, key = "Team", value = "Value")
 
-ggplot(OUs, aes(x = OpenClose, y = Value)) +
+before <- ggplot(Tots, aes(x = Team, y = Value)) +
   geom_boxplot(fill = "brown", color = "black") +
-  ggtitle("Boxplots of Game Point Totals") +
+  ggtitle("Boxplots of Game Point Totals Before Adjustments") +
   labs(x = "Visitor/Home Final Score",
   y = "Total Number of Points")
+
+Tots <- tidy %>% 
+  select(VF, HF)
+Tots <- gather(Tots, key = "Team", value = "Value")
+
+after <- ggplot(Tots, aes(x = Team, y = Value)) +
+  geom_boxplot(fill = "brown", color = "black") +
+  ggtitle("Boxplots of Game Point Totals After Adjustments") +
+  labs(x = "Visitor/Home Final Score",
+  y = "Total Number of Points")
+
+grid.arrange(before, after, ncol = 2, widths = c(9, 9))
 ```
 
-The outliers that did appear at the top end of these distributions were reviewed independently against official box-score files researched online (via: https://www.basketball-reference.com/boxscores/), and none of them were identified as incorrectly entered into the database.
+The outliers that appear at the bottom end are clearly also out of place, and were confirmed to be mis-entries. However, the quarter scores were correctly entered, so the VF and HF were therefore changed to be the sum of the four quarter scores. The outlier seen at the top of the "HF" boxplot was confirmed to be a legitimate score (Phoenix Suns vs. Golden State Warriors on March 15, 2009: https://www.basketball-reference.com/boxscores/200903150GSW.html), so it was not removed.
+
 
 After performing these steps, and removing rows with missing data, we were pleased enough with our tidy dataset to commence our data exploration!
 

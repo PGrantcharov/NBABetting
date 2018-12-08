@@ -101,8 +101,8 @@ for i in range(int(len(df)/2)-1):
 
     tidy.loc[i] = row
 
-tidy.to_csv("../Data/intermediate.csv", index_label="Index")
-
+intermediate = tidy.copy()
+intermediate.to_csv("../Data/intermediate.csv", index_label="Index")
 
 # Removes/fixes a few outliers
 tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] < 70]
