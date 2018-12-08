@@ -103,6 +103,7 @@ df <- tidy %>%
                labels = c("-5","-4","-3", "-2", "-1", "-0.5", "skip -1 to 1", "0.5", "1", "2","3", "4", "5"))) %>%
   filter(!(Diff_dec_idx == "skip -1 to 1")) %>%
   mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
+  #mutate(earning = if_else( (Total_2H-OU2H)<0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
 
 df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
 
@@ -125,6 +126,7 @@ df <- tidy %>%
                labels = c("-5","-4","-3", "-2", "-1", "-0.5", "0", "0.5", "1", "2","3", "4", "5"))) %>%
   filter(!(Diff_dec_idx == "skip -1 to 1")) %>%
   mutate(earning = if_else( (Total_2H-OU2H)<0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
+  #mutate(earning = if_else( (Total_2H-OU2H)<0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
 
 df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
 
@@ -164,4 +166,3 @@ ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
   labs(x="Betting Profit", y="NBA Team") +
   ggtitle("Cleveland Dot Plot of Net Profit by Betting on Same Team")
 ```
-
