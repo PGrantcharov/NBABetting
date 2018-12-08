@@ -18,7 +18,7 @@ knitr::opts_chunk$set(message = FALSE,
 # generate total score and total 2H score
 library(tidyverse)
 tidy <- read_csv("../data/tidy.csv") %>% 
-  select(Date, SZN, V, H, V1, V2, V3, V4, H1, H2, H3, H4, VF, HF, OUOpen, OUClose, OU2H) %>% 
+  select(Date, SZN, V, H, V1, V2, V3, V4, H1, H2, H3, H4, VF, HF, OUOpen, OUClose, OU2H, VMoney, HMoney) %>% 
   mutate(Total = VF+HF) %>% 
   mutate(Total_2H = V3+V4+H3+H4) 
 ```
@@ -154,9 +154,9 @@ clevland dot plot for betting singe team win for 10 years
 
 ```{r}
 df <- tidy %>% 
-  select(V, H, VF, HF) %>%
-  mutate(Bet_V_win = if_else(VF>HF, 95, if_else(VF<HF, -100, 0))) %>%
-  mutate(Bet_H_win = if_else(VF<HF, 95, if_else(VF>HF, -100, 0)))
+  select(V, H, VF, HF, VMoney, HMoney) %>%
+  mutate(Bet_V_win = if_else(VF>HF, if_else(VMoney>0, VMoney, -100/VMoney*100), if_else(VF<HF, -100, 0))) %>%
+  mutate(Bet_H_win = if_else(VF<HF, if_else(HMoney>0, HMoney, -100/HMoney*100), if_else(VF>HF, -100, 0)))
 
 df_V <- df %>%
   group_by(V) %>% summarise_at("Bet_V_win", sum) %>%
@@ -172,7 +172,32 @@ df_Team <- df_V %>%
 
 ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
   geom_point() +
-  labs(y="Betting Profit", x="NBA Team") +
-  ggtitle("Bet Same Team Win For Pass 10 years")
+  labs(x="Betting Profit", y="NBA Team") +
+  ggtitle("Bet Same Team Win For Pass 10 years without Commission")
+
+```
+
+```{r}
+df <- tidy %>% 
+  select(V, H, VF, HF, VMoney, HMoney) %>%
+  mutate(Bet_V_win = if_else(VF>HF, if_else(VMoney>0, VMoney-5, -100/VMoney*100-5), if_else(VF<HF, -100, 0))) %>%
+  mutate(Bet_H_win = if_else(VF<HF, if_else(HMoney>0, HMoney-5, -100/HMoney*100-5), if_else(VF>HF, -100, 0)))
+
+df_V <- df %>%
+  group_by(V) %>% summarise_at("Bet_V_win", sum) %>%
+  rename(Team = V)
+
+df_H <- df %>%
+  group_by(H) %>% summarise_at("Bet_H_win", sum) %>%
+  rename(Team = H)
+
+df_Team <- df_V %>% 
+  inner_join(df_H) %>%
+  mutate(profit = Bet_V_win + Bet_H_win)
+
+ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
+  geom_point() +
+  labs(x="Betting Profit", y="NBA Team") +
+  ggtitle("Bet Same Team Win For Pass 10 years with Commission")
 
 ```
