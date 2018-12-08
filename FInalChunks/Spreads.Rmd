@@ -17,7 +17,7 @@ library(plyr)
 
 
 ```{r}
-odds <- read.table('tidy.csv', header=TRUE, sep=',')
+odds <- read.table("../Data/tidy.csv", header=TRUE, sep=',')
 ```
 
 ```{r}
@@ -190,45 +190,8 @@ for (j in 1:length(spreadChange$Change)){
 ```{r}
 spreadChange$Change <- as.factor(spreadChange$Change)
 ggplot(spreadChange, aes(x=Change, y=Profit)) +
-  geom_bar(stat='identity', fill='orange', color='black') +
+  geom_bar(stat='identity', fill='brown', color='black') +
   geom_text(aes(label = paste(Profit), vjust = ifelse(Profit >= 0, -0.5, 1.5)), size=3) +
   scale_y_continuous(limits = c(-40000,5000)) +
   labs(x="Spread Change", title="Placing a $100 Bet On Sides With Different Spreads at the Open and Close") 
 ```
-
-
-```{r}
-# Simulates betting
-df$Profit = 0
-for (i in 2:length(df$Profit)){
-  if (df$VMoney[i] > 35 && df$VMoney[i] < 45) {
-    if (df$VResult[i] == TRUE) {
-      df$Profit[i] <- df$Profit[i - 1] + (((100 - df$VMoney[i])/(df$VMoney[i]))*100)
-    }
-    else {
-      df$Profit[i] <- df$Profit[i - 1] - 100
-    }
-  }
-  else{
-    df$Profit[i] <- df$Profit[i - 1]
-  }
-}
-ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
-    geom_line(lwd = 0.1) +
-    geom_ribbon(aes(x = Date, ymax = Profit), ymin = 0, alpha=0.3,
-                fill = "darkgreen", color = "darkgreen") +
-    geom_hline(aes(yintercept = max(Profit), colour = "High"),
-               alpha = 0.8, lwd = 1, linetype="dotdash") +
-    geom_hline(aes(yintercept = min(Profit), colour = "Low"),
-               alpha = 0.8, lwd = 1, linetype="dotdash") +
-    geom_hline(aes(yintercept = Profit[14186], colour = "Finish"),
-               alpha = 0.8, lwd = 1, linetype="dotdash") +
-    ggtitle("Profit Over Time by Betting on Visiting Team with Win Odds Between 35-45%") +
-    #scale_x_date(limits = as.Date(c('2018-01-01','2019-01-01'))) +
-    scale_color_manual(values = c('Profit' = 'darkgreen', "Low" = "red",
-                                  "High" = "blue", "Finish" = "black")) +
-    theme_bw() +
-    labs(x = "Date", y = "Running Profit", color = "Legend:")
-```
-
-

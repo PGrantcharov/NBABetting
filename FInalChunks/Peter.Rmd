@@ -176,7 +176,8 @@ before <- ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
   ggtitle("Boxplots of Quarter Point Totals Before Adjustments") +
   labs(x = "Quarter",
   y = "Number of Points",
-  caption = "V = visitor, H = home")
+  caption = "V = visitor, H = home") +
+  theme_bw()
 
 quarter_scores <- tidy %>% 
   select(V1, V2, V3, V4, H1, H2, H3, H4)
@@ -187,7 +188,8 @@ after <- ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
   ggtitle("Boxplots of Quarter Point Totals After Adjustments") +
   labs(x = "Quarter",
   y = "Number of Points",
-  caption = "V = visitor, H = home")
+  caption = "V = visitor, H = home") +
+  theme_bw()
 
 grid.arrange(before, after, ncol = 2, widths = c(9, 9))
 ```
@@ -216,7 +218,8 @@ before <- ggplot(OUs, aes(x = OpenClose, y = Value)) +
   geom_boxplot(fill = "brown", color = "black") +
   ggtitle("Boxplots of Over/Under Scores at the Open and Close Before Adjustments") +
   labs(x = "Open/Close",
-  y = "Over/Under for the Total Number of Points")
+  y = "Over/Under for the Total Number of Points") +
+  theme_bw()
 
 OUs <- tidy %>% 
   select(OUOpen, OUClose)
@@ -226,7 +229,8 @@ after <- ggplot(OUs, aes(x = OpenClose, y = Value)) +
   geom_boxplot(fill = "brown", color = "black") +
   ggtitle("Boxplots of Over/Under Scores at the Open and Close After Adjustments") +
   labs(x = "Open/Close",
-  y = "Over/Under for the Total Number of Points")
+  y = "Over/Under for the Total Number of Points") +
+  theme_bw()
 
 grid.arrange(before, after, ncol = 2, widths = c(9, 9))
 ```
@@ -250,7 +254,8 @@ before <- ggplot(Tots, aes(x = Team, y = Value)) +
   geom_boxplot(fill = "brown", color = "black") +
   ggtitle("Boxplots of Game Point Totals Before Adjustments") +
   labs(x = "Visitor/Home Final Score",
-  y = "Total Number of Points")
+  y = "Total Number of Points") +
+  theme_bw()
 
 Tots <- tidy %>% 
   select(VF, HF)
@@ -260,7 +265,8 @@ after <- ggplot(Tots, aes(x = Team, y = Value)) +
   geom_boxplot(fill = "brown", color = "black") +
   ggtitle("Boxplots of Game Point Totals After Adjustments") +
   labs(x = "Visitor/Home Final Score",
-  y = "Total Number of Points")
+  y = "Total Number of Points") +
+  theme_bw()
 
 grid.arrange(before, after, ncol = 2, widths = c(9, 9))
 ```
@@ -295,32 +301,145 @@ As briefly described in section 2.2, the over/under is a particular betting opti
 
 This bet is attractive to bettors because it is, in theory, a 50%-50% bet. That is, payouts are equal regardless of which side you pick, which is not necessarily true for picking game winners with a moneyline bet. In reality, sportsbooks charge a commission, which has been reflected in the graphs that we present here, so the payouts do not exactly correspond to the probability of winning the bet (i.e. winning does not completely 'double your money' in this case). 
 
-Given our intuition that changes in the over/under values carry some information (perhaps an indicator of ), we wanted to explore whether such swings had any relationship to the true outcomes. This is what we explored and  tested in this section.
+Given our intuition that changes in the over/under values carry some information (perhaps an indicator of new information regarding the game), we wanted to explore whether such swings had any relationship to the true outcomes. Additionally, we wanted to see the relatinship between the full game over/under scores and the over/under scores for the second half (OU2H in dataset). This is what we explored and tested in this section.
 
 #4.1.1  Data Overview
-```{r}
+
+As a starting point, we wanted to explore the distribution of the relevant variables. As such, we plotted a histogram, box plot, and quartile-quartile plot of the differences between OUOpen and OUClose. As a means of comparison, we also plotted a scatter plot that aimed to showcase the strength of the relationship between the full game over/under values, and those for just the second half.
+```{r fig.height=12, fig.width=12}
 tidy <- tidy %>% 
   select(Date, SZN, V, H, V1, V2, V3, V4, H1, H2, H3, H4,
          VF, HF, OUOpen, OUClose, OU2H, VMoney, HMoney) %>% 
   mutate(Total = VF+HF) %>% 
   mutate(Total_2H = V3+V4+H3+H4) 
 
+df <- tidy %>% 
+  select(OUOpen, OUClose) %>%
+  mutate(Diff = OUClose - OUOpen)
+
+histo <- ggplot(df, aes(x = Diff)) +
+  geom_histogram(binwidth = 0.5, fill='brown', color='black') +
+  xlab("Score Difference") + 
+  ylab("Frequency Counts") +
+  ggtitle("Histogram of Changes in Over/Under Values (OUClose-OUOpen)") +
+  theme_bw()
+
+box <- ggplot(df, aes(y= Diff)) + 
+  geom_boxplot(fill = "brown") +
+  scale_x_discrete() + 
+  xlab("(OUClose - OUOpen)") + 
+  ylab("Score Difference") +
+  ggtitle("Boxplot of Changes in Over/Under Values (OUClose-OUOpen)") +
+  theme_bw()
+
+qq <- ggplot(df, aes(sample = Diff)) +
+  geom_qq() +
+  stat_qq_line(distribution = qnorm, color= "brown", size = 2) +
+  xlab("Theoratical") +
+  ylab("Score Difference") +
+  ggtitle("QQ-Plot of Changes in Over/Under Values (OUClose-OUOpen)") +
+  theme_bw()
+
 df <- tidy %>% select(OUClose, OU2H) %>% mutate(Ratio = OUClose / OU2H)
 
-ggplot(df, aes(x = OUClose, y = OU2H)) +
+scat <- ggplot(df, aes(x = OUClose, y = OU2H)) +
   geom_point(alpha = 0.05) +
-  geom_smooth(method = lm, se = FALSE, color = "brown", show.legend = TRUE) + 
-  scale_x_continuous("House Over/Under Close Score",
+  geom_smooth(method = lm, se = FALSE, color = "brown", show.legend = TRUE, size = 2) + 
+  scale_x_continuous("Over/Under Scores for Full Game",
                      breaks = c(170, 180, 190, 200, 210, 220, 230, 240),
                      labels = c("170", "180", "190", "200", "210", "220", "230", "240")) +
-  scale_y_continuous("House Over/Under 2nd Half Score",
+  scale_y_continuous("Over/Under Scores for 2nd Half",
                      breaks = c(85,90,95,100,105,110,115,120),
                      labels = c("85","90","95","100","105","110","115","120")) +
   ggtitle("Over/Under Scores at the Close for Full Game vs. 2nd Half") +
   theme_bw()
+
+grid.arrange(histo, box, qq, scat, ncol = 2)
 ```
 
 
+The three plots pertaining to the distributions appear to be fairly standard with few clues to oddities that may be exploitable for profitable betting systems The plot in the bottom right, however, shows us that although the second half over/unders vs. full time over/unders have a very strong trend line with a slope of ~0.5, there are several instances where these scores deviate somewhat significantly from this line, so it is by no means a "fixed" relationship. We will explore this further.
 
+
+#4.1.2  Preliminary Model
+
+Our suspicion is that if the over/under increases (that is, more people think that the total number of points scored will be greater than first posited by the sportsbooks), this is a sign of new knowledge. As such, we will implement the betting system that first identifies which direction the over/under moved, and then either:
+
+* bets on the second half "OVER" if the over/under line increased, or;
+
+* bets on the second half "UNDER" if the over/under line decreased, or;
+
+* bet nothing if the over/under line did not move between the open and the close.
+
+Our simulation will places \$100 bets in each of those instances. The following bar chart shows the net profits for each of the different line movements by implementing this betting system over the entirity of our dataset. 
+```{r}
+df <- tidy %>% 
+  select(OUOpen, OUClose, Total, OU2H, Total_2H) %>%
+  mutate(Diff = OUClose-OUOpen) %>% 
+  mutate(Diff_dec_idx = 
+           cut(Diff,
+               breaks = c(-Inf, -5.49, -4.49, -3.49, -2.49, -1.49, -0.49, 0.49, 1.49, 2.49, 3.49, 4.49, 5.49, Inf), 
+               labels = c("<= -6","-5","-4", "-3", "-2", "-1", "skip", "1", "2", "3", "4", "5", ">= 6"))) %>%
+  filter(!(Diff_dec_idx == "skip")) %>%
+  mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
+
+df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
+
+ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
+  geom_bar(stat='identity', fill = "brown", color = "black") +
+  xlab("Open-to-Close Over/Under Difference") +
+  ylab("Profit ($)") + 
+  ggtitle("Profit by Open-to-Close Score Differences via Proposed Betting System") +
+  theme_bw()
+```
+
+
+Clearly, there are some noticable trends here. When betting on the "under" for the second half when the closing over/under value was smaller than the opening over/under value, we are nearly always profitable. Conversely, when the closing over/under value was greater than the opening over/under value, resulting in us betting on the "over" for the second half, we were always unprofitable.
+
+
+#4.1.3  Modified Model
+
+Logically, we simply modified our betting system such that we would ALWAYS bet on the under for the second half, regardless of which direction the open-to-close over/under line moved. This would invert flip the bars on the above graph for instances where the open-to-close over/under difference was positive. We have presented the running profit over time by implementing such a betting system:
+
+
+
+```{r}
+df <- tidy  %>% select(Date, OUOpen, OUClose, OU2H, Total_2H) %>%
+  mutate(Diff = OUClose-OUOpen)
+  
+df$Profit = 0
+for (i in 2:length(df$Profit)){
+  if (df$Diff[i] == 0) {
+    df$Profit[i] <- df$Profit[i - 1]
+  }
+  else {
+    if (df$OU2H[i] > df$Total_2H[i]) {
+      df$Profit[i] <- df$Profit[i - 1] + 95
+    }
+    else if (df$OU2H[i] < df$Total_2H[i]) {
+      df$Profit[i] <- df$Profit[i - 1] - 100
+    }
+    else {
+      df$Profit[i] <- df$Profit[i - 1]
+    }
+  }
+}
+
+ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
+  geom_line(lwd = 0.1) +
+  geom_ribbon(aes(x = Date, ymax = Profit), ymin = 0, alpha=0.3,
+              fill = "darkgreen", color = "darkgreen") + 
+  geom_hline(aes(yintercept = min(Profit), colour = "Low"), alpha = 0.8, lwd = 1,
+             linetype="dotdash") +
+  geom_hline(aes(yintercept = Profit[14186], colour = "Finish"), alpha = 0.8,
+             lwd = 1, linetype="dotdash") +
+  ggtitle("Profit Over Time by Betting 'Under' for 2nd Half Over/Under") +
+  scale_color_manual(values = c('Profit' = 'darkgreen', "Low" = "red",
+                                "High" = "blue", "Finish" = "black")) +
+  labs(x = "Date", y = "Running Profit", color = "Legend:") +
+  theme_bw()
+```
+
+Frankly, this finding is absolutely remarkable and we have spent several hours trying to identify mistakes in our code, but we were not able to find any. In short, this graphic shows that if one were to have been \$100 on the "under" for the second half over/under in all NBA games since the beginning of the 2007-2008 NBA season, they would be up over \$80,000. 
 
 
