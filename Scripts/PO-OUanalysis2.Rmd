@@ -216,5 +216,8 @@ df <- tidy %>%
 ggplot(df, aes(x=index, y=..count..)) + 
   geom_bar() +
   ggtitle("Counts for 1st and 2nd game score comparsion")
+
+
 ```
+
 
