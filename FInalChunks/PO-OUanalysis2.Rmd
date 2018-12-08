@@ -85,8 +85,23 @@ df <- tidy %>%
   filter(!(Diff_dec_idx == "skip -1 to 1")) %>%
   mutate(earning = if_else( (Total-OUClose)*(Diff)>0, 95, if_else(Total==OUClose, 0, -100) ) )
 
-
 df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
+
+ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
+  geom_bar(stat='identity') +
+  xlab("Score Difference") +
+  ylab("Profit ($)") + 
+  ggtitle("Placing Bet On Over OUClose if Score Difference is Positive, and Vice Versa")
+```
+
+```{r}
+for (idx in c(2,3,4,5)) {
+  df2$profit[idx] = df2$profit[idx] + df2$profit[idx-1]
+}
+
+for (idx in c(9, 8, 7, 6)){
+  df2$profit[idx] = df2$profit[idx] + df2$profit[idx+1]
+}
 
 ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   geom_bar(stat='identity') +
@@ -115,4 +130,49 @@ ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   xlab("Score Difference") +
   ylab("Profit ($)") + 
   ggtitle("Placing Bet On Over OU2H if Score Difference is Positive, and Vice Versa")
+```
+
+chunk 5 caclulate the cumulative profits. For example, bet for difference greater than 4 include 4 and 5+.
+
+```{r}
+for (idx in c(2,3,4,5)) {
+  df2$profit[idx] = df2$profit[idx] + df2$profit[idx-1]
+}
+
+for (idx in c(9, 8, 7, 6)){
+  df2$profit[idx] = df2$profit[idx] + df2$profit[idx+1]
+}
+
+ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
+  geom_bar(stat='identity') +
+  xlab("Score Difference") +
+  ylab("Profit ($)") + 
+  ggtitle("Placing Bet On Over OU2H if Score Difference is Positive, and Vice Versa")
+```
+
+clevland dot plot for betting singe team win for 10 years
+
+```{r}
+df <- tidy %>% 
+  select(V, H, VF, HF) %>%
+  mutate(Bet_V_win = if_else(VF>HF, 95, if_else(VF<HF, -100, 0))) %>%
+  mutate(Bet_H_win = if_else(VF<HF, 95, if_else(VF>HF, -100, 0)))
+
+df_V <- df %>%
+  group_by(V) %>% summarise_at("Bet_V_win", sum) %>%
+  rename(Team = V)
+
+df_H <- df %>%
+  group_by(H) %>% summarise_at("Bet_H_win", sum) %>%
+  rename(Team = H)
+
+df_Team <- df_V %>% 
+  inner_join(df_H) %>%
+  mutate(profit = Bet_V_win + Bet_H_win)
+
+ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
+  geom_point() +
+  labs(y="Betting Profit", x="NBA Team") +
+  ggtitle("Bet Same Team Win For Pass 10 years")
+
 ```
