@@ -280,12 +280,47 @@ As mentioned, we are particularly interested in answerings the following two que
   * *Are there certain betting systems that would have been able to turn a profit if implemented throughout the 11 season span of this dataset?*
 
 
-To do this, we decided to explore three different avenues that we hoped would reveal valuable insights:
+To do this, we decided to explore three different avenues that we suspected to possibly reveal valuable insights:
 
-1) Spreads
+1) Over/Under Analysis
 
-2) Over/Under
+2) Spread Analysis
 
 3) Team Analysis
+
+
+
+##4.1 Over/Under Analysis
+As briefly described in section 2.2, the over/under is a particular betting option where the gambler attempts to correctly predict whether the total amount of points in a game (combined for both teams) will be greater or less than some arbitrary value. In reality, this "arbitrary value" is selected based on various predictive models by the sportsbooks, and further, is capable of changing over the course of the betting period based on which side of the over/under the majority of gamblers are placing their money. Because of this fact, we can frequently observe changes in the over/under totals between the start of the betting session (OUOPpen in our dataset) and the conclusion of the betting session (OUClose). 
+
+This bet is attractive to bettors because it is, in theory, a 50%-50% bet. That is, payouts are equal regardless of which side you pick, which is not necessarily true for picking game winners with a moneyline bet. In reality, sportsbooks charge a commission, which has been reflected in the graphs that we present here, so the payouts do not exactly correspond to the probability of winning the bet (i.e. winning does not completely 'double your money' in this case). 
+
+Given our intuition that changes in the over/under values carry some information (perhaps an indicator of ), we wanted to explore whether such swings had any relationship to the true outcomes. This is what we explored and  tested in this section.
+
+#4.1.1  Data Overview
+```{r}
+tidy <- tidy %>% 
+  select(Date, SZN, V, H, V1, V2, V3, V4, H1, H2, H3, H4,
+         VF, HF, OUOpen, OUClose, OU2H, VMoney, HMoney) %>% 
+  mutate(Total = VF+HF) %>% 
+  mutate(Total_2H = V3+V4+H3+H4) 
+
+df <- tidy %>% select(OUClose, OU2H) %>% mutate(Ratio = OUClose / OU2H)
+
+ggplot(df, aes(x = OUClose, y = OU2H)) +
+  geom_point(alpha = 0.05) +
+  geom_smooth(method = lm, se = FALSE, color = "brown", show.legend = TRUE) + 
+  scale_x_continuous("House Over/Under Close Score",
+                     breaks = c(170, 180, 190, 200, 210, 220, 230, 240),
+                     labels = c("170", "180", "190", "200", "210", "220", "230", "240")) +
+  scale_y_continuous("House Over/Under 2nd Half Score",
+                     breaks = c(85,90,95,100,105,110,115,120),
+                     labels = c("85","90","95","100","105","110","115","120")) +
+  ggtitle("Over/Under Scores at the Close for Full Game vs. 2nd Half") +
+  theme_bw()
+```
+
+
+
 
 

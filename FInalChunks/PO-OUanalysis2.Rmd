@@ -84,14 +84,6 @@ df <- tidy %>%
 
 df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
 
-for (idx in c(2,3,4,5)) {
-  df2$profit[idx] = df2$profit[idx] + df2$profit[idx-1]
-}
-
-for (idx in c(9, 8, 7, 6)){
-  df2$profit[idx] = df2$profit[idx] + df2$profit[idx+1]
-}
-
 ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   geom_bar(stat='identity') +
   xlab("Score Difference") +
@@ -111,16 +103,9 @@ df <- tidy %>%
                labels = c("-5","-4","-3", "-2", "-1", "skip -1 to 1", "1", "2","3", "4", "5"))) %>%
   filter(!(Diff_dec_idx == "skip -1 to 1")) %>%
   mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
+  #mutate(earning = if_else( (Total_2H-OU2H)<0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
 
 df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
-
-for (idx in c(2,3,4,5)) {
-  df2$profit[idx] = df2$profit[idx] + df2$profit[idx-1]
-}
-
-for (idx in c(9, 8, 7, 6)){
-  df2$profit[idx] = df2$profit[idx] + df2$profit[idx+1]
-}
 
 ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   geom_bar(stat='identity') +
