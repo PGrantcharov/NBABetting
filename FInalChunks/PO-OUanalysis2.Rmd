@@ -1,0 +1,117 @@
+---
+title: "GR5702 EDAV Fianl Project Over/Under & Spread Analysis"
+author: "Po-Chieh Liu (pl2441)"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+```
+
+
+Todo
+1. OUClose vs OU2H (scatter plot with linear regression line)
+  linearity for applying OUClose strategy on OU2H
+  
+2. OUOpen - OUClose
+
+```{r}
+# import data and library
+# generate total score and total 2H score
+library(tidyverse)
+tidy <- read_csv("../data/tidy.csv") %>% 
+  select(Date, SZN, V, H, V1, V2, V3, V4, H1, H2, H3, H4, VF, HF, OUOpen, OUClose, OU2H) %>% 
+  mutate(Total = VF+HF) %>% 
+  mutate(Total_2H = V3+V4+H3+H4) 
+```
+
+```{r}
+df <- tidy %>% select(OUClose, OU2H) %>% mutate(Ratio = OUClose / OU2H)
+
+ggplot(df, aes(x = OUClose, y = OU2H)) +
+  geom_point(alpha = 0.05) +
+  geom_smooth(se = FALSE) + #using method = 'loess'
+  geom_smooth(method = lm, se = FALSE, color = "red") + 
+  scale_x_continuous("House Over/Under Close Score", breaks = c(170, 180, 190, 200, 210, 220, 230, 240), labels = c("170", "180", "190", "200", "210", "220", "230", "240")) +
+  scale_y_continuous("House Over/Under 2nd Half Score", breaks = c(85,90,95,100,105,110,115,120), labels = c("85","90","95","100","105","110","115","120")) +
+  ggtitle("Over/Under Close Score VS. Over/Under 2nd Half Score")
+
+ggplot(df, aes(x = seq(1, length(tidy$OUClose)),y = OUClose/OU2H)) +
+  geom_point(alpha = 0.1) +
+  ggtitle("Ratio Over/Under Close Score and Over/Under 2nd Half Score") +
+  scale_x_continuous("Game Index", breaks = c(0, 2500, 5000, 7500, 10000, 12500), labels = c("0", "2500", "5000", "7500", "10000", "12500")) +
+  scale_y_continuous("OUClose/OU2H", breaks = c(1.9, 2.0 , 2.1 , 2.2), labels = c("1.9", "2.0" , "2.1" , "2.2")) +
+  geom_smooth(se = FALSE) + #using method = 'loess'
+  geom_smooth(method = lm, se = FALSE, color = "red") 
+```
+
+```{r}
+df <- tidy %>% 
+  select(OUOpen, OUClose) %>%
+  mutate(Diff = OUClose - OUOpen)
+
+ggplot(df, aes(x = Diff)) +
+  geom_histogram(binwidth = 0.5, fill='lightblue', color='black') +
+  xlab("Score Difference") + 
+  ylab("Counts") +
+  ggtitle("Over/Under Score Difference Histogram")
+
+ggplot(df, aes(y= Diff)) + 
+  geom_boxplot() +
+  scale_x_discrete() + 
+  ylab("Score Difference") +
+  ggtitle("Over/Under Score Difference Boxplot")
+  
+ggplot(df, aes(sample = Diff)) +
+  geom_qq() +
+  stat_qq_line(distribution = qnorm) +
+  xlab("Theoratical") +
+  ylab("Socre Difference") +
+  ggtitle("Score Difference QQ-Plot")
+```
+
+
+```{r}
+df <- tidy %>% 
+  select(OUOpen, OUClose, Total, OU2H, Total_2H) %>%
+  mutate(Diff = OUClose-OUOpen) %>% 
+  mutate(Diff_dec_idx = 
+           cut(Diff,
+               breaks = c(-Inf, -5, -4, -3, -2, -1.01, 1.01, 2, 3, 4, 5, Inf), 
+               labels = c("-5","-4","-3", "-2", "-1", "skip -1 to 1", "1", "2","3", "4", "5"))) %>%
+  filter(!(Diff_dec_idx == "skip -1 to 1")) %>%
+  mutate(earning = if_else( (Total-OUClose)*(Diff)>0, 95, if_else(Total==OUClose, 0, -100) ) )
+
+
+df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
+
+ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
+  geom_bar(stat='identity') +
+  xlab("Score Difference") +
+  ylab("Profit ($)") + 
+  ggtitle("Placing Bet On Over OUClose if Score Difference is Positive, and Vice Versa")
+```
+
+```{r}
+df <- tidy %>% 
+  select(OUOpen, OUClose, Total, OU2H, Total_2H) %>%
+  mutate(Diff = OUClose-OUOpen) %>% 
+  mutate(Diff_dec_idx = 
+           cut(Diff,
+               breaks = c(-Inf, -5, -4, -3, -2, -1.01, 1.01, 2, 3, 4, 5, Inf), 
+               labels = c("-5","-4","-3", "-2", "-1", "skip -1 to 1", "1", "2","3", "4", "5"))) %>%
+  filter(!(Diff_dec_idx == "skip -1 to 1")) %>%
+  mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
+
+
+df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
+
+ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
+  geom_bar(stat='identity') +
+  xlab("Score Difference") +
+  ylab("Profit ($)") + 
+  ggtitle("Placing Bet On Over if Score Difference is Positive, and Vice Versa")
+```
