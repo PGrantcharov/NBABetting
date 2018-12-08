@@ -12,11 +12,6 @@ knitr::opts_chunk$set(message = FALSE,
 ```
 
 
-Todo
-1. OUClose vs OU2H (scatter plot with linear regression line)
-  linearity for applying OUClose strategy on OU2H
-  
-2. OUOpen - OUClose
 
 ```{r}
 # import data and library
@@ -27,6 +22,8 @@ tidy <- read_csv("../data/tidy.csv") %>%
   mutate(Total = VF+HF) %>% 
   mutate(Total_2H = V3+V4+H3+H4) 
 ```
+
+Chunk 1 plots the OUClose vs OU2H. The linearity is required for applying the betting decition based on OUClose and OUOpen.
 
 ```{r}
 df <- tidy %>% select(OUClose, OU2H) %>% mutate(Ratio = OUClose / OU2H)
@@ -47,6 +44,8 @@ ggplot(df, aes(x = seq(1, length(tidy$OUClose)),y = OUClose/OU2H)) +
   geom_smooth(se = FALSE) + #using method = 'loess'
   geom_smooth(method = lm, se = FALSE, color = "red") 
 ```
+
+Chunk 2 plots the difference between OUClose and OUopen in three different ways, in order to find the proper decision scores for betting. 
 
 ```{r}
 df <- tidy %>% 
@@ -73,6 +72,7 @@ ggplot(df, aes(sample = Diff)) +
   ggtitle("Score Difference QQ-Plot")
 ```
 
+Chunk 3 applys previous plots results. For betting decision, if the score difference is between -1 to 1, skipping the game due to lack of information. For rest games, bet Under if the difference is negative, and bet Over if the difference is positive.
 
 ```{r}
 df <- tidy %>% 
@@ -95,6 +95,8 @@ ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   ggtitle("Placing Bet On Over OUClose if Score Difference is Positive, and Vice Versa")
 ```
 
+Chunk 4 apply the same strategy for betting 2nd half game.
+
 ```{r}
 df <- tidy %>% 
   select(OUOpen, OUClose, Total, OU2H, Total_2H) %>%
@@ -106,12 +108,11 @@ df <- tidy %>%
   filter(!(Diff_dec_idx == "skip -1 to 1")) %>%
   mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
 
-
 df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
 
 ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   geom_bar(stat='identity') +
   xlab("Score Difference") +
   ylab("Profit ($)") + 
-  ggtitle("Placing Bet On Over if Score Difference is Positive, and Vice Versa")
+  ggtitle("Placing Bet On Over OU2H if Score Difference is Positive, and Vice Versa")
 ```
