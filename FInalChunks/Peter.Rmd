@@ -436,10 +436,101 @@ ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
   ggtitle("Profit Over Time by Betting 'Under' for 2nd Half Over/Under") +
   scale_color_manual(values = c('Profit' = 'darkgreen', "Low" = "red",
                                 "High" = "blue", "Finish" = "black")) +
-  labs(x = "Date", y = "Running Profit", color = "Legend:") +
+  labs(x = "Date", y = "Running Profit ($)", color = "Legend:") +
   theme_bw()
 ```
 
-Frankly, this finding is absolutely remarkable and we have spent several hours trying to identify mistakes in our code, but we were not able to find any. In short, this graphic shows that if one were to have been \$100 on the "under" for the second half over/under in all NBA games since the beginning of the 2007-2008 NBA season, they would be up over \$80,000. 
+Frankly, this finding is absolutely remarkable. We have spent several hours trying to identify mistakes in our code, but we were not able to find any. In short, this graphic shows that if one were to have been \$100 on the "under" for the second half over/under in all NBA games since the beginning of the 2007-2008 NBA season, they would be up over \$80,000. 
+
+
+#4.2  Spread Analysis
+Spread betting is similar to over/under betting, in the sense that they are both theoretically 50%-50% bets. The "spread" is defined as the minimum number of points one team has to win by, or maximum number of points one team can lose by, for a bettor to win their bet. A team with a negative spread is the favorite, while the team with the positive spread is the underdog. To give a concrete example, a spread of *-5.5* indicates that bet on the favorite spread will only win if the team wins by 6 or more points. Conversely, bets on the underdog will pay out as long as the underdog wins or loses by less than 5.5 points. 
+
+Another parallel to over/under betting is that the actual value of the spread is both a factor of the bookmaker's models and the market. Bookmakers publish initial spread values that can be modified based on where the market is placing their bets. Spread betting is also subject to the standard commissions, like over/under betting, which are reflected in our visualizations.
+
+##4.2.1 Spread Movement as Indicator
+```{r}
+tidy <- read_csv("../Data/tidy.csv")
+tidy$HSpreadChange <- tidy$HSpreadClose - tidy$HSpreadOpen
+tidy$VSpreadChange <- tidy$VSpreadClose - tidy$VSpreadOpen
+tidy <- tidy %>% select(Date, VF, HF, HSpreadClose, VSpreadClose, HSpreadChange, VSpreadChange)
+
+spreadChange <- data_frame("Change" = c(-2.5, -2, -1.5, -1, -0.5, 0.5, 1, 1.5, 2, 2.5))
+spreadChange$Profit <- 0
+
+for (j in 1:length(spreadChange$Change)){ 
+  tidy$Payout <- 0
+  for (i in 1:length(tidy$Payout)) {
+    if (spreadChange$Change[j] == tidy$HSpreadChange[i]) {  # if spread change for the game is a hit
+      if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) {    # if home team beat spread
+        tidy$Payout[i] <- 95
+      } else if (tidy$VF[i] - tidy$HF[i] > tidy$HSpreadClose[i]){
+        tidy$Payout[i] <- -100
+      }
+      
+    } else if (spreadChange$Change[j] == tidy$VSpreadChange[i]) {
+      if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) {    # if vis team beat spread
+        tidy$Payout[i] <- 95
+      } else if (tidy$HF[i] - tidy$VF[i] > tidy$VSpreadClose[i]) {
+        tidy$Payout[i] <- -100
+      }
+    }
+  }
+  spreadChange$Profit[j] = sum(tidy$Payout)
+}
+
+spreadChange$Change <- as.factor(spreadChange$Change)
+ggplot(spreadChange, aes(x=Change, y=Profit)) +
+  geom_bar(stat='identity', fill='brown', color='black') +
+  geom_text(aes(label = paste(Profit), vjust = ifelse(Profit >= 0, -0.5, 1.5)), size=3) +
+  scale_y_continuous(limits = c(-15000,5000)) +
+  labs(x="Spread Change", title="Placing a $100 Bet On Sides With Different Spreads at the Open and Close") +   theme_bw()
+
+```
+
+Clearly, this is not an valuable source of information for bettors. Regardless of whether you made your bets in favor or against the direction that the spread line moved, you would walk away a loser at the end of the day. 
+
+##4.2.2 A No Commission World
+
+This result fact, though, gives us a great opportunity to highlight the damaging long term effect of paying a 2.5% commission on every bet, as was done in this simulation. To showcase this, we will present the outcomes of running the exact same simulation, but this time, winning \$100 on a \$100 bet. 
+
+```{r}
+for (j in 1:length(spreadChange$Change)){ 
+  tidy$Payout <- 0
+  for (i in 1:length(tidy$Payout)) {
+    if (spreadChange$Change[j] == tidy$HSpreadChange[i]) {  # if spread change for the game is a hit
+      if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) {    # if home team beat spread
+        tidy$Payout[i] <- 100
+      } else if (tidy$VF[i] - tidy$HF[i] > tidy$HSpreadClose[i]){
+        tidy$Payout[i] <- -100
+      }
+      
+    } else if (spreadChange$Change[j] == tidy$VSpreadChange[i]) {
+      if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) {    # if vis team beat spread
+        tidy$Payout[i] <- 100
+      } else if (tidy$HF[i] - tidy$VF[i] > tidy$VSpreadClose[i]) {
+        tidy$Payout[i] <- -100
+      }
+    }
+  }
+  spreadChange$Profit[j] = sum(tidy$Payout)
+}
+
+spreadChange$Change <- as.factor(spreadChange$Change)
+ggplot(spreadChange, aes(x=Change, y=Profit)) +
+  geom_bar(stat='identity', fill='brown', color='black') +
+  geom_text(aes(label = paste(Profit),
+                vjust = ifelse(Profit >= 0, -0.5, 1.5)), size=3) +
+  scale_y_continuous(limits = c(-15000,5000)) +
+  labs(x="Spread Change", y="Profit ($)",
+       title="Net Profit When Betting in Direction of Given Spread Change") +
+  theme_bw()
+```
+
+The difference is clear. For all of the spread change values, net profits are significantly greater. The symmetry for positive and negative spread change values also reveals itself. This makes logical sense, because if you would bet in favor of the spread line movement (negative spread change bars) for one team, you would bet for their opponent to beat the spread when you bet against the spread line movement (positive spread change bars).
+
+Now we can see that it is clearly in one's interest to bet against the movement of the spread. To give a concrete example. If a team of interest was initially an underdog needing to beat a +5 spread at the open, and then the line moved to a +7 spread at the close  (close - open = 7 - 5 = +1), then you should bet FOR that team to beat the +7 spread.
+
+
 
 
