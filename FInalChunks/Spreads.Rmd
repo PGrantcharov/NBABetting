@@ -2,9 +2,7 @@
 title: "Homework 4 Question 3"
 author: "Fernando Troeman (ft2515)"
 date: "11/13/2018"
-output:
-  pdf_document: default
-  html_notebook: default
+output: html_document
 ---
 
 For our final project, my group is doing an analysis of betting odds and results for a total 14,186 NBA games starting from the 2007/08 season up to the end of the 2017/18 season. We have variables that include the teams playing in each game, the scores in each game, and various betting lines or types in each game (e.g. Point Spreads, Money Line, Over/Under, etc.).
