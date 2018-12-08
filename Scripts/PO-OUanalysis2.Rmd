@@ -91,6 +91,26 @@ ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   ggtitle("Placing Bet On Over OUClose if Score Difference is Positive, and Vice Versa")
 ```
 
+```{r}
+df <- tidy %>% 
+  select(OUOpen, OUClose, Total, OU2H, Total_2H) %>%
+  mutate(Diff = OUClose-OUOpen) %>% 
+  mutate(Diff_dec_idx = 
+           cut(Diff,
+               breaks = c(-Inf, -4.9, -3.9, -2.9, -1.9, -0.9, -0.49, 0.49, 0.9, 1.9, 2.9, 3.9, 4.9, Inf), 
+               labels = c("-5","-4","-3", "-2", "-1", "-0.5", "0", "0.5", "1", "2","3", "4", "5"))) %>%
+  filter(!(Diff_dec_idx == "skip -1 to 1")) %>%
+  mutate(earning = if_else( (Total-OUClose)<0, 95, if_else(Total==OUClose, 0, -100) ) )
+
+df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
+
+ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
+  geom_bar(stat='identity') +
+  xlab("Score Difference") +
+  ylab("Profit ($)") + 
+  ggtitle("Placing Bet On Under OUClose for All Games")
+```
+
 Chunk 4 apply the same strategy for betting 2nd half game.
 
 ```{r}
@@ -164,6 +184,7 @@ ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
   labs(x="Betting Profit", y="NBA Team") +
   ggtitle("Cleveland Dot Plot of Net Profit by Betting on Same Team")
 ```
+
 ```{r}
 df <- tidy %>% select(Total, Total_2H, OU2H, OUClose)
 
@@ -198,3 +219,5 @@ ggplot(df, aes(x=index, y=..count..)) +
 
 
 ```
+
+
