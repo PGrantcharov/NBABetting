@@ -1,0 +1,209 @@
+---
+title: "GR5702 EDAV Fianl Project Over/Under & Spread Analysis"
+author: "Po-Chieh Liu (pl2441)"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE,
+                      warning = FALSE)
+```
+
+```{r}
+# import data and library
+# generate total score and total 2H score
+library(tidyverse)
+final_df <- read_csv("../data/tidy.csv") %>% 
+  select(Date, SZN, V, H, V1, V2, V3, V4, H1, H2, H3, H4, VF, HF, OUOpen, OUClose, OU2H, VSpread2H, HSpread2H) %>% 
+  mutate(Total = VF+HF) %>% 
+  mutate(Total_1H = V1+V2+H1+H2) %>%
+  mutate(Total_2H = V3+V4+H3+H4) 
+```
+
+### Total Score Histogram
+
+First plot the total scores over past 10 seasons. The plot shows the score are looks normally distributed with mean around 200. There are some extreme values around 275 to 300, which might be considered to remove for later testing. 
+
+```{r}
+df <- final_df %>% 
+  select(Total, OUOpen, OUClose)
+
+ggplot(df, aes(x=Total, y=..density..)) + 
+  geom_histogram(binwidth = 1) +
+  ggtitle("NBA Games' Total Score Histogram") + 
+  geom_density(size = 1,  color = "red") +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.005, 0.01, 0.015, 0.02), labels = c('0%', '0.5%', '1%', '1.5%', '2%'))
+  
+```
+
+### OUOpen vs OUClose 
+
+We first plot the OUOpen and OUClose incompared with the total score. OUopen is the initial score house predicted. OUClose is the score house modified based on the betting behavior after open betting of Over/Under. If more betting on Over than Under, then house will increase the OUOpen to balance the portion of over betting and under betting. The final adjusted score is OUClose.
+
+The following plot shows the OUClose is better than OUOpen. The better is defining the difference between predicted score and actual score. Here give us some information that if we want to predict 2nd Half score, OUClose should be a better variable than OUopen.
+
+```{r}
+df <- final_df %>% select(Total, OUOpen, OUClose) %>% 
+  mutate(Open_diff = abs(OUOpen-Total)) %>% 
+  mutate(Close_diff = abs(OUClose - Total)) %>% 
+  mutate(Improvement = if_else(Close_diff< Open_diff, 'Better', if_else(Close_diff > Open_diff, 'Worse', 'Same')))
+
+ggplot(df, aes(Improvement, fill = Improvement)) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5), labels = c('0%', '10%', '20%', '30%', '40%', '50%')) +
+  xlab("OUClose Improment") +
+  ggtitle("OUClose Prediction Improvement from OUopen") +
+  guides(fill=FALSE) +
+  coord_flip()
+
+```
+
+### Changes Counts from OUOpen to OUclose
+
+The differences of the OUOpen and OUClose generate a gap zone that if actual score is located inside zone, we can win double if we bet 2 times, one bet is over OUOpen and one bet is under OUClose. If OUClose is greater than OUopen, then there is a gap with width OUClose - OUOpen we can win double prize, and outside the gap we will not lose any money due to controversy bets. The following plot shows the percentage of OUclose is increased, decreased or remained for the pass 10 seasons. We can observe that increased OUclose percentage is slightly more than decreased one. 
+
+```{r}
+df <- final_df %>% select(Total, OUOpen, OUClose) %>%
+  mutate(Change = if_else(OUOpen > OUClose, 'Decreased', if_else(OUOpen < OUClose, 'Increased', 'Remained')))
+
+ggplot(df, aes(Change, fill = Change)) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5), labels = c('0%', '10%', '20%', '30%', '40%', '50%')) +
+  xlab("Change from OUOpen to OUclose") +
+  ggtitle("OUClose Score Change Counts") + 
+  guides(fill=FALSE) +
+  coord_flip()
+```
+
+### Super Win zone betting performance
+
+For testing Super Win Zone theory, assume we bet \$100 on Over of OUOpen and \$100 on Under of OUClose. The following plot show the performance. From the plot, we can observe that very few games' scores are located in the Super Win Zone (229 counts) and lots games are with 0 profits (13380 counts). The overall betting performance is -1,200 with Super Win Zone strategy. The result might looks bad, however, we can modify our betting strategy a little bit. We can bet OUopen after house starting adjusting the scores, then we can bet Over if OUOpen is increasing, and bet Under if OUOpen is decreasing. Which gurantee the zero lose condition. The second plot shows the performance, we can still observe that very few games are located inside the Super Win Zone. The overall profits are \$448,000. The profit number sounds large but for each bet house will charge certain amount fee. The total number of games are 14,188. If house charge more than \$1.58 fee for each bet, than we are still losing money. 
+
+```{r}
+df <- final_df %>% select(Total, OUOpen, OUClose) %>%
+  mutate(OUopen_win_lost = if_else(Total > OUOpen, 100, if_else(Total == OUOpen, 0, -100))) %>%
+  mutate(OUClose_win_lost = if_else(Total > OUClose, -100, if_else(Total == OUClose, 0, 100))) %>%
+  mutate(SuperWinPerformace = OUopen_win_lost + OUClose_win_lost)
+
+
+ggplot(df, aes(SuperWinPerformace))+
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.2, 0.4, 0.6, 0.8), labels = c('0%', '20%', '40%', '60%', '80%')) +
+  xlab("Reward ($)") +
+  ggtitle("Super Win Zone Betting Stretagy Performance") + 
+  coord_flip()
+
+df <- df %>% group_by(SuperWinPerformace) %>% summarise(Counts = n())
+```
+
+
+
+```{r}
+df <- final_df %>% select(Total, OUOpen, OUClose) %>%
+  mutate(SuperWinPerformace = if_else( ((Total > OUOpen) & (Total < OUClose)), 200, if_else( ((Total < OUOpen) & (Total > OUClose)), 200, 0 )))
+
+ggplot(df, aes(SuperWinPerformace))+
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_x_continuous("Reward ($)", breaks = c(0, 200), labels = c('0', '200')) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1), labels = c('0%', '20%', '40%', '60%', '80%', "100%")) +
+  ggtitle("Super Win Zone Betting Stretagy V2 Performance") + 
+  coord_flip()
+
+df <- df %>% group_by(SuperWinPerformace) %>% summarise(Counts = n())
+```
+
+
+### Predict OU2H
+
+House prediction accuracy
+
+
+```{r}
+df <- final_df %>% select(Total_2H, OU2H, SZN) %>%
+  mutate(Accuracy = if_else(Total_2H>OU2H, 'Underestimated', if_else(Total_2H<OU2H, 'Overestiamted', 'Equal')))
+
+ggplot(df, aes(x = Accuracy, fill = Accuracy)) +
+  geom_bar(aes(y = (..count..)/sum(..count..))) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5), labels = c('0%', '10%', '20%', '30%', '40%', '50%')) +
+  scale_x_discrete("House Predicited 2nd Half Score Accuracy") +
+  guides(fill=FALSE) +
+  coord_flip() +
+  ggtitle("House Predicted Score Accuracy")
+
+ggplot(df) +
+  geom_point(aes(x=OU2H, y=Total_2H), alpha= 0.1) +
+  facet_wrap(~SZN) +
+  scale_x_continuous("OU2H") + 
+  scale_y_continuous("2nd Half Score")+
+  ggtitle("House Predicted Score vs. 2nd Half Score")
+
+```
+
+### Improvement from assignemnt
+
+In the homework assignment, we intuitively think the second half game scores should be related to first half game. After some data exploration and visualization, we found the house predictions are mostly overestiamted (previous plot). And generated some betting strategies based on the first half game scores, the betting performaces are bad. The following plots shows the second half score is not associated with first half score.
+
+```{r}
+df <- final_df %>% select( Total_2H, Total, SZN) %>% 
+  mutate( Q1Q2 = Total - Total_2H)
+ggplot(df) +
+  geom_point(aes(x=Q1Q2, y=Total_2H), alpha= 0.1) +
+  facet_wrap(~SZN) +
+  scale_x_continuous("1st Half Game Score Score") + 
+  scale_y_continuous("2nd Half Score")+
+  ggtitle("1st Half Gmae Score vs. 2nd Half Score")
+
+
+```
+
+### apply OUClose
+
+Since the OUOpen and OUClose scores are generated by house's model, and the model is generally considered accurate for house earning mondey. Thus, we wanto to expand the assignment model to incorporate with OUClose to improve the betting strategy, also exploring the relationship between OUClose and second half scores. Note, since we observed OUClose is more accurate than OUopen, thus we only consider OUClose for data exploration.
+
+###
+
+Generate predict score based on OUClose minus the first half game scores. The reason doing this is becasue both variables are avaible when betting second half scores. We can observe that most of the time the score is overestimated of the acutal score. We further check the predicted score verse house predicted score (OU2H).
+
+```{r}
+df <- final_df %>% 
+  select(OUClose, OU2H, Total_1H, Total_2H, SZN) %>%
+  mutate(OUpredict = OUClose - Total_1H) %>%
+  mutate(Accuracy = if_else(OUpredict > Total_2H, 'Overestimated', if_else(OUpredict< Total_2H, 'Underestimated', 'Equal')))
+
+ggplot(df, aes(x = Accuracy, fill = Accuracy)) +
+  geom_bar(aes(y=(..count..)/sum(..count..))) +
+  scale_y_continuous("Percentage of Games", breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5), labels = c('0%', '10%', '20%', '30%', '40%', '50%')) +
+  scale_x_discrete("Predicted Score Accuracy") +
+  coord_flip() +
+  ggtitle("Apply OUClose Score to Predicited 2nd Half Score Accuracy")
+
+ggplot(df) +
+  geom_point(aes(x=OUpredict, y=Total_2H), alpha= 0.1) +
+  facet_wrap(~SZN) +
+  scale_x_continuous("OUClose Predicted Score") + 
+  scale_y_continuous("2nd Half Score")+
+  ggtitle("Apply OUClose Predicited 2nd Half Score vs. 2nd Half Score")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
