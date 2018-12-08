@@ -194,7 +194,14 @@ df <- tidy %>%
 
 ggplot(df, aes(x=index, y=..count..)) + 
   geom_bar() +
-  ggtitle("Counts for 1st and 2nd game score comparsion")
+  ggtitle("Counts for 1st and 2nd game score comparsion (acutal)")
 
+df <- tidy %>% 
+  select(OUClose, OU2H) %>%
+  mutate(OU1H = OUClose - OU2H) %>%
+  mutate(index = if_else(OU1H>OU2H, "Positve", if_else(OU1H==OU2H, "equal", "Negative")))
 
+ggplot(df, aes(x=index, y=..count..)) + 
+  geom_bar() +
+  ggtitle("Counts for 1st and 2nd game score comparsion (OUClose, OU2H)")
 ```
