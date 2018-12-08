@@ -180,8 +180,8 @@ ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
 ```{r}
 df <- tidy %>% 
   select(V, H, VF, HF, VMoney, HMoney) %>%
-  mutate(Bet_V_win = if_else(VF>HF, if_else(VMoney>0, VMoney-5, -100/VMoney*100-5), if_else(VF<HF, -100, 0))) %>%
-  mutate(Bet_H_win = if_else(VF<HF, if_else(HMoney>0, HMoney-5, -100/HMoney*100-5), if_else(VF>HF, -100, 0)))
+  mutate(Bet_V_win = if_else(VF>HF, if_else(VMoney>0, VMoney*.95, -100/VMoney*100*.95), if_else(VF<HF, -100, 0))) %>%
+  mutate(Bet_H_win = if_else(VF<HF, if_else(HMoney>0, HMoney*.95, -100/HMoney*100*.95), if_else(VF>HF, -100, 0)))
 
 df_V <- df %>%
   group_by(V) %>% summarise_at("Bet_V_win", sum) %>%
