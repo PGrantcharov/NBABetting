@@ -136,6 +136,13 @@ ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   ggtitle("Placing Bet On Under OU2H for All Games")
 ```
 
+
+```{r}
+df <- tidy %>% select(OU2H, Total_2H)
+
+
+```
+
 chunk 5 caclulate the cumulative profits. For example, bet for difference greater than 4 include 4 and 5+.
 
 clevland dot plot for betting singe team win for 10 years
