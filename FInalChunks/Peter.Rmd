@@ -1,8 +1,10 @@
 ---
-title: "Sports Betting Analysis"
+title: "Sports Betting Analysis of NBA Matches Since 2007"
 author: "Peter Grantcharov, Fernando Troeman, Po-Chieh Liu"
 date: "12/10/2018"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -25,7 +27,6 @@ tidy = read_csv("../Data/tidy.csv")
 ##1.1  Overview
 In this report, we will investigate a dataset from Sports Book Reviews Online (https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm). This website has scraped sports betting data from online sportsbooks for all NBA basketball seasons since the 2007-2008 season. Their databases also contain the game outcomes, thereby allowing for insightful comparisons between the betting odds established before the individual games and actual game results.
 
-
 ##1.2  Motivation
 We chose this topic to satisfy the primal parts of our psyches that are overly stimulated by:
 
@@ -39,9 +40,9 @@ We chose this topic to satisfy the primal parts of our psyches that are overly s
 
 4) Data exploration and visualization
 
-We therefore found this data set to be an excellent suitor for delivering captivating insights. 
+We therefore found this data set to be an excellent suitor for delivering captivating insights and exercising our data analysis and visualization skills 
 
-More specifically, we are particularly interested in asking (and hopefully definitivey answering) the questions of:
+More specifically, we are particularly interested in asking (and hopefully definitively answering) the questions of:
 
   * *How good are the market and the sportsbooks at correctly determining the odds for a given match-up?*
 
@@ -50,35 +51,32 @@ More specifically, we are particularly interested in asking (and hopefully defin
 ##1.3  Group
 Every group member was very curious and committed to answering these questions. Below is an outline of how the responsibilities were divided amongst our group:
 
-
 Peter Grantcharov:
 
-* 
+* Wrote sections 1, 2, and 3; compiled reports
 
 Po-Chieh Liu:
 
-*
+* Created over/under analysis; created individual teams analysis
 
 Fernando Troeman:
 
-*
+* Constructed entire interactive visualization; created spread analysis
 
-
-
-
-
+\newpage
 #2  Data Description
 ##2.1  Data Collection
 The data files were downloaded as individual seasons in separate *.xlsx* files from https://www.sportsbookreviewsonline.com/. Sports betting data is a highly valued commodity, so comprehensive and clean open source databases are hard to come by. 
 
-The individual seasons were then stitched together into a single *.csv* file. The script to perform this merger was written in Python, and the code can be found in our GitHub document entitled *csv_merger.py*. It should also be noted that in the process of merging the data, the *Date* column was also transformed to be a date object from the Python package *Datetime* (*Datetime* formated values in CSV files are automatically read as *Date* objects in R). Since the Date object in Python under the *Datetime* package does not consider February 29 as a valid date, this exception was also handled in this merger script. 
+The individual seasons were then stitched together into a single *.csv* file. The script to perform this merger was written in Python, and the code can be found in our GitHub document entitled *csv_merger.py*. It should also be noted that during the process of merging the data, the *Date* column was also transformed to be a date object from the Python package *Datetime* (*Datetime* formated values in CSV files are automatically read as *Date* objects in R). Since the Date object in Python under the *Datetime* package does not consider February 29 as a valid date, this exception was also handled in this merger script. 
 
 ##2.2 Dataset Features
-The following columns were included in the raw, untidy dataset:
+###2.2.1  Definitions
+In the untidy dataset, each row corresponded to a team. Therefore, each NBA match would have data spanning two consecutive rows, which then had to be merged to a single row during the tidying process. The following columns were included in the raw, untidy dataset:
 
 1) Date - Given in the integer format "MMDD"
 
-2) V/H - Indicates whether team in this row was the visiting team or home team (alternates down the data frame)
+2) V/H - Indicator of whether team in this row was the visiting team or home team (alternates down the data frame)
 
 3) Team - Team name
 
@@ -94,10 +92,35 @@ The following columns were included in the raw, untidy dataset:
 
 8) ML - The "moneyline"; if negative (favorite), represents how much money a bettor has to bet to win \$100 if the team in the row wins; if positive (underdog), represents how much money a better wins on a \$100 bet
 
-9) 2H - Contains the same data as "Open" and "Close", but now only applies to the over/under scores and the win margins (spreads) for just the 2nd half of the game; this value is finalized at the points that sportsbooks close betting for a given game
+9) 2H - Contains the same data as "Open" and "Close", but now only applies to the over/under scores and the win margins (spreads) for just the 2nd half of the game; this value is finalized at the points that sportsbooks close betting for a given 
 
+\newpage
 
+###2.2.2  Explanations (optional)
 
+To avoid confusion in later sections, we have included an optional, but comprehensive, section here that defines some key terms pertaining to sports betting:
+
+1) Over/Under
+
+The over/under is a value representing the HYPOTHESIZED total amount of points in a given time period. For this dataset, this is either for the full game or for the second half of the game. 
+
+Sports bettors can pick the "over" if they believe the number of points scored in the game will be greater than the over/under value given by the sportsbook, or they can pick the "under" if they believe that the number of points scored will be less. This is theoretically a 50%-50% bet (being correct/incorrect should have the same probability as for a coin flip). However, since sportsbooks charge a commission, the payouts for a correct over/under bet will be slightly less than simply doubling your original bet. 
+
+So for example, a sportsbook may have an over/under value of 200 points for a given game. If the final score of the game was 101-105, there would've been a total of 206 points scored, and hence, a winning bettor would have had to select the "over" bet in order to get a payout. 
+
+2) Spread
+
+For a given game, each team will have a spread value. The spread values for opposing teams will be the negatives of each other, where the team that is the favorite will have a negative spread value (e.g. -5), and the underdog will have a positive spread value (e.g. +5). To win a spread bet, the selected team must win by MORE than the spread value if they are the favorite, or the selected team must NOT lose by MORE than the spread value if they are the underdog.
+
+So for example, if the Boston Celtics are favored against the New York Knicks with a spread of -5 for Boston and +5 for New York, and a bettor believes that New York will lose by less than 5 points, then they would select the +5 spread in favor of New York. Then this bettor would win the bet if Boston's point total minus New York's point total is less than 5. 
+
+Spread bets, like over/under bets, are theoretically also 50%-50% bets, with a small commission sacrificed for a winning bet.
+
+3) Moneyline
+
+Moneyline bets are easier to digest, because they solely involve selecting the winner of a match. Because of this, the payouts vary significantly from match to match based on the teams (i.e., it is no longer a 50%-50% bet). Like spread betting, the favorite will have a negative moneyline value and the underdog will have a positive moneyline value. For favorites, this value is less than or equal to -100, and corresponds to the amount of money a bettor would have to bet in order to win \$100 on a correct bet. For underdogs, the value is greater than or equal to +100, and corresponds to the amount of money a bettor would win on a \$100 bet.
+
+\newpage
 
 #3  Analysis of Quality
 
@@ -112,7 +135,7 @@ kable(combined[1:5,], caption = "Untidy Data")
 
 After tidying, the CSV looking like this (only columns relevant to visiting team showed for convenience):
 ```{r}
-kable(tidy[1:5, c(2, 4, 5, 6, 7, 8, 9, 14, 16, 18, 22, 24, 25)], caption = "Tidy Data")
+kable(tidy[1:5, c(2, 4, 6, 7, 8, 9, 14, 16, 18, 22, 24)], caption = "Tidy Data")
 ```
 
 This process was quite extensive due to the format of the data. For example, second half betting lines in column "2H" (shown above in the untidy dataframe) contained two columns worth of data: 
@@ -120,7 +143,7 @@ This process was quite extensive due to the format of the data. For example, sec
 1) Over/Under scores;
 2) Spreads
 
-Hence, to give each of these features their own columns, an algorithm had to be constructed that assessed whether a given entry in "2H" represented Over/Under or Spread data, and then filled out the tidy columns accordingly. This data frame conversion can be found below the *# MAKE TIDY DATA FRAME* comment in the python script entitled: *data_cleaner.py*.
+Hence, to give each of these features their own columns, an algorithm had to be constructed that assessed whether a given entry in "2H" represented Over/Under or Spread data, and then filled out the tidy columns accordingly. This data frame conversion can be found below the "*# MAKE TIDY DATA FRAME*" comment in the python script entitled: *data_cleaner.py*.
 
 ##3.2  Cleaning
 Next, we had to clean the data. The was primarily done to handle the missing values, incorrect entries, and improper data formatting. This process was done entirely in Python, and the full script can be found in  *data_cleaner.py* on our GitHub repository. Relevant excerpts of such corrections are included below.
@@ -131,7 +154,7 @@ By getting a list of the unique team names, we could see a few mistakes that nee
 unique(combined$Team)
 ```
 
-Clearly, inconsistencies in spelling (Oklahoma City and LA Clippers) needed to be corrected. Further, the Brooklyn Nets were formerly known as the New Jersey Nets, before an ownership change resulted in their minor relocation. To allow for continuation analyses of the same franchise, all "NewJersey" entries were renamed as "Brooklyn". 
+Clearly, inconsistencies in spelling (Oklahoma City and LA Clippers) needed to be corrected. Additionally, the Brooklyn Nets were formerly known as the New Jersey Nets before an ownership change resulted in their minor relocation. To allow for continuation analyses of the same franchise, all "NewJersey" entries were renamed as "Brooklyn". 
 
 ```{python, eval = FALSE, python.reticulate = FALSE}
 # Make spelling consistent; replace NewJersey --> Brooklyn
@@ -143,7 +166,7 @@ df = df.replace(to_replace="LA Clippers", value="LAClippers")
 
 ###3.2.2  Pick 'em:
 
-A convention in sports betting is to name 50/50 bets as "Pick 'em" bets. In this dataset, those bets were denoted as "pk" or "PK". Further, on occasion, sportsbooks will close the book on certain games for a variety of reasons. Such games are denoted as "no line" or "NL" in this dataset. The former were given values of '0' in our data frame, and the latter were given 'NA' values so they could be easily removed later. This process is shown below:
+A convention in sports betting is to name 50/50 bets as "Pick 'em" bets. In this dataset, those bets were denoted as "pk" or "PK". Further, on occasion, sportsbooks will close the book on certain games for a variety of reasons. Such games are denoted as "no line" or "NL" in this dataset. The former were given values of '0' in our data frame, and the latter were given 'NA' values so they could be easily removed later. Lastly, a few mis-entries were also identified below because they either had characters in a numerical column, or had values differing by a factor of 10. The correction process is shown below:
 
 ```{r}
 kable((combined %>% filter(`2H` == 'pk'))[1:5,], caption = "Pick 'em Examples *Notice column '2H'")
@@ -152,7 +175,7 @@ kable(combined[c(1975,23521),], caption = "Faulty Over/Under Cases")
 
 
 ```{python, eval = FALSE, python.reticulate = FALSE}
-# Replace all pk odds (i.e. 50/50 outcomes) with 0; correct improper formatted entries
+# Replace all pk odds (i.e. 50/50 outcomes) with 0; remove NL bets
 df = df.replace(to_replace=["pk", "PK"], value=0)
 df = df.replace(to_replace="NL", value=np.nan)
 
@@ -162,9 +185,9 @@ df.loc[df.index[23521], 'Open'] = 195.5
 
 
 ###3.2.3  Bad Entries:
-To located the bad entries, we found it to be effective to make graphs of the different variables - particularly box plots given the number of data entries. This was done for each of the numerical variables in the dataset:
+To located the bad entries, we found it effective to make graphs of the different variables - particularly box plots given the number of data entries. This was done for each of the numerical variables in the dataset:
 
-Since all eight columns for quarter scores have approximately the same distributions, we could kill eight birds with one stone and plot them all at once. By identifying the mis-entries in these columns, we applied a generic threshold for all columns to remove the identified outliers. The before and after plots are shown below, with the Python code used to apply the corrections being printed below the graphs. 
+Since all eight columns for quarter scores have nearly identical distributions, we could kill eight birds with one stone and plot them all at once. By identifying the mis-entries in these columns, we applied a generic threshold for all columns to remove the identified outliers. The before and after plots are shown below, with the Python code used to apply the corrections being printed below the graphs. 
 
 ```{r fig.width = 12, fig.height=6}
 quarter_scores <- intermediate %>% 
@@ -194,7 +217,7 @@ after <- ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
 grid.arrange(before, after, ncol = 2, widths = c(9, 9))
 ```
 
-Clearly, negative values are impossible in the context of basketball scores, so those entries were promptly removed. Similarly, other extreme outliers were dropped, while the remaining outliers were assessed individually. Given that our dataset had over 14000 games, and that we were operating under the assumption that these mis-entries occur at random, we did not think that it would be too harmful to be rather loose with removing data entries that weren't cooperating. 
+Clearly, negative values are impossible in the context of basketball scores, so those entries were promptly removed. Similarly, other extreme outliers were dropped, while the remaining outliers were assessed individually. Given that our dataset had over 14000 games, and that we were operating under the assumption that such mis-entries occur at random, we did not think that it would be too harmful to be rather loose with removing data entries that weren't cooperating. 
 
 Excerpt from the clearning script in Python:
 ```{python, eval = FALSE, python.reticulate = FALSE}
@@ -276,6 +299,7 @@ The outliers that appear at the bottom end are clearly also out of place, and we
 
 After performing these steps, and removing rows with missing data, we were pleased enough with our tidy dataset to commence our data exploration!
 
+\newpage
 
 #4  Main Analysis
 
@@ -292,12 +316,12 @@ To do this, we decided to explore three different avenues that we suspected to p
 
 2) Spread Analysis
 
-3) Team Analysis
+3) Individual Team Analysis
 
 
 
 ##4.1 Over/Under Analysis
-As briefly described in section 2.2, the over/under is a particular betting option where the gambler attempts to correctly predict whether the total amount of points in a game (combined for both teams) will be greater or less than some arbitrary value. In reality, this "arbitrary value" is selected based on various predictive models by the sportsbooks, and further, is capable of changing over the course of the betting period based on which side of the over/under the majority of gamblers are placing their money. Because of this fact, we can frequently observe changes in the over/under totals between the start of the betting session (OUOPpen in our dataset) and the conclusion of the betting session (OUClose). 
+As described in section 2.2, the over/under is a particular betting option where the gambler attempts to correctly predict whether the total amount of points in a game (combined for both teams) will be greater or less than some arbitrary value. In reality, this "arbitrary value" is selected based on various predictive models by the sportsbooks, and further, is capable of changing over the course of the betting period based on which side of the over/under the majority of gamblers are placing their money. Because of this fact, we can frequently observe changes in the over/under totals between the start of the betting session (OUOpen in our dataset) and the conclusion of the betting session (OUClose). 
 
 This bet is attractive to bettors because it is, in theory, a 50%-50% bet. That is, payouts are equal regardless of which side you pick, which is not necessarily true for picking game winners with a moneyline bet. In reality, sportsbooks charge a commission, which has been reflected in the graphs that we present here, so the payouts do not exactly correspond to the probability of winning the bet (i.e. winning does not completely 'double your money' in this case). 
 
@@ -358,16 +382,16 @@ grid.arrange(histo, box, qq, scat, ncol = 2)
 ```
 
 
-The three plots pertaining to the distributions appear to be fairly standard with few clues to oddities that may be exploitable for profitable betting systems The plot in the bottom right, however, shows us that although the second half over/unders vs. full time over/unders have a very strong trend line with a slope of ~0.5, there are several instances where these scores deviate somewhat significantly from this line, so it is by no means a "fixed" relationship. We will explore this further.
+The three plots pertaining to the distributions appear to be fairly standard with few clues to oddities that may be exploitable for profitable betting systems. The plot in the bottom right, however, shows us that although the second half over/unders vs. full time over/unders have a very strong trend line with a slope of about 0.5, there are several instances where these scores deviate somewhat significantly from this line, so it is by no means a "fixed" relationship. We will explore this further.
 
 
 ###4.1.2  Preliminary Model
 
 Our suspicion is that if the over/under increases (that is, more people think that the total number of points scored will be greater than first posited by the sportsbooks), this is a sign of new knowledge. As such, we will implement the betting system that first identifies which direction the over/under moved, and then either:
 
-* bets on the second half "OVER" if the over/under line increased, or;
+* bets on the second half "OVER" if the over/under line increased (OUClose-OUOpen > 0), or;
 
-* bets on the second half "UNDER" if the over/under line decreased, or;
+* bets on the second half "UNDER" if the over/under line decreased (OUClose-OUOpen < 0), or;
 
 * bet nothing if the over/under line did not move between the open and the close.
 
@@ -378,18 +402,23 @@ df <- tidy %>%
   mutate(Diff = OUClose-OUOpen) %>% 
   mutate(Diff_dec_idx = 
            cut(Diff,
-               breaks = c(-Inf, -5.49, -4.49, -3.49, -2.49, -1.49, -0.49, 0.49, 1.49, 2.49, 3.49, 4.49, 5.49, Inf), 
-               labels = c("<= -6","-5","-4", "-3", "-2", "-1", "skip", "1", "2", "3", "4", "5", ">= 6"))) %>%
+               breaks = c(-Inf, -5.49, -4.49, -3.49, -2.49, -1.49, -0.49,
+                          0.49, 1.49, 2.49, 3.49, 4.49, 5.49, Inf), 
+               labels = c("<= -6","-5","-4", "-3", "-2", "-1", "skip",
+                          "1", "2", "3", "4", "5", ">= 6"))) %>%
   filter(!(Diff_dec_idx == "skip")) %>%
-  mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95, if_else(Total_2H==OU2H, 0, -100) ) )
+  mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95,
+                            if_else(Total_2H==OU2H, 0, -100) ) )
 
-df2 <- df %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>% filter(as.numeric(Diff_dec_idx)>0)
+df2 <- df %>%  group_by(Diff_dec_idx) %>%
+  summarise(profit = sum(earning)) %>%
+  filter(as.numeric(Diff_dec_idx)>0)
 
 ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   geom_bar(stat='identity', fill = "brown", color = "black") +
-  xlab("Open-to-Close Over/Under Difference") +
+  xlab("Open-to-Close Over/Under Change") +
   ylab("Profit ($)") + 
-  ggtitle("Profit by Open-to-Close Score Differences via Proposed Betting System") +
+  ggtitle("Profit by Betting System Based on Open-to-Close Score Change") +
   theme_bw()
 ```
 
@@ -400,8 +429,6 @@ Clearly, there are some noticable trends here. When betting on the "under" for t
 ###4.1.3  Modified Model
 
 Logically, we simply modified our betting system such that we would ALWAYS bet on the under for the second half, regardless of which direction the open-to-close over/under line moved. This would invert flip the bars on the above graph for instances where the open-to-close over/under difference was positive. We have presented the running profit over time by implementing such a betting system:
-
-
 
 ```{r}
 df <- tidy  %>% select(Date, OUOpen, OUClose, OU2H, Total_2H) %>%
@@ -444,32 +471,38 @@ Frankly, this finding is absolutely remarkable. We have spent several hours tryi
 
 
 ##4.2  Spread Analysis
-Spread betting is similar to over/under betting, in the sense that they are both theoretically 50%-50% bets. The "spread" is defined as the minimum number of points one team has to win by, or maximum number of points one team can lose by, for a bettor to win their bet. A team with a negative spread is the favorite, while the team with the positive spread is the underdog. To give a concrete example, a spread of *-5.5* indicates that bet on the favorite spread will only win if the team wins by 6 or more points. Conversely, bets on the underdog will pay out as long as the underdog wins or loses by less than 5.5 points. 
+Spread betting is similar to over/under betting, in the sense that they are both theoretically 50%-50% bets. The "spread" is defined as the minimum number of points one team has to win by, or maximum number of points one team can lose by, for a bettor to win their bet. A team with a negative spread is the favorite, while the team with the positive spread is the underdog. To give a concrete example, a spread of *-5.5* indicates that bet on the favorite spread will only win if the team wins by 6 or more points. Conversely, bets on the underdog will pay out as long as the underdog does not lose by more than 5.5 points. 
 
 Another parallel to over/under betting is that the actual value of the spread is both a factor of the bookmaker's models and the market. Bookmakers publish initial spread values that can be modified based on where the market is placing their bets. Spread betting is also subject to the standard commissions, like over/under betting, which are reflected in our visualizations.
 
 ###4.2.1 Spread Movement as Indicator
-```{r}
+
+To see if we could replicate the success of our over/under betting model, we wanted to see if changes in spread values between the open and close would be indicators of new information. Rather than betting on second half spreads, though, we would simply select the closing spread based on the direction that the spread line moved.
+
+To be specific, we would calculate the spread change, which occured in incraments of 0.5 points. For this visualization, we show the net earnings over time if you always bet on a team with a given net spread change. So for example, in the visualization below, we can see that the bar corresponding to a spread change  of +2  had a net profit of $1730. This means that for all the instances where a team became LESS favored by 2 points (e.g. spread changed from +2 to +4, or -7 to -5), if you bet on that team, you would have seen those net earnings over the past 11 seasons. 
+
+```{r message=FALSE}
 tidy <- read_csv("../Data/tidy.csv")
 tidy$HSpreadChange <- tidy$HSpreadClose - tidy$HSpreadOpen
 tidy$VSpreadChange <- tidy$VSpreadClose - tidy$VSpreadOpen
-tidy <- tidy %>% select(Date, VF, HF, HSpreadClose, VSpreadClose, HSpreadChange, VSpreadChange)
+tidy <- tidy %>% select(Date, VF, HF, HSpreadClose,
+                        VSpreadClose, HSpreadChange, VSpreadChange)
 
-spreadChange <- data_frame("Change" = c(-2.5, -2, -1.5, -1, -0.5, 0.5, 1, 1.5, 2, 2.5))
+spreadChange <- data_frame("Change" = c(-2.5, -2, -1.5, -1,
+                                        -0.5, 0.5, 1, 1.5, 2, 2.5))
 spreadChange$Profit <- 0
 
 for (j in 1:length(spreadChange$Change)){ 
   tidy$Payout <- 0
   for (i in 1:length(tidy$Payout)) {
-    if (spreadChange$Change[j] == tidy$HSpreadChange[i]) {  # if spread change for the game is a hit
-      if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) {    # if home team beat spread
+    if (spreadChange$Change[j] == tidy$HSpreadChange[i]) {  
+      if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) {  
         tidy$Payout[i] <- 95
       } else if (tidy$VF[i] - tidy$HF[i] > tidy$HSpreadClose[i]){
         tidy$Payout[i] <- -100
       }
-      
     } else if (spreadChange$Change[j] == tidy$VSpreadChange[i]) {
-      if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) {    # if vis team beat spread
+      if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) {  
         tidy$Payout[i] <- 95
       } else if (tidy$HF[i] - tidy$VF[i] > tidy$VSpreadClose[i]) {
         tidy$Payout[i] <- -100
@@ -480,56 +513,60 @@ for (j in 1:length(spreadChange$Change)){
 }
 
 spreadChange$Change <- as.factor(spreadChange$Change)
-ggplot(spreadChange, aes(x=Change, y=Profit)) +
-  geom_bar(stat='identity', fill='brown', color='black') +
-  geom_text(aes(label = paste(Profit), vjust = ifelse(Profit >= 0, -0.5, 1.5)), size=3) +
-  scale_y_continuous(limits = c(-15000,5000)) +
-  labs(x="Spread Change", title="Placing a $100 Bet On Sides With Different Spreads at the Open and Close") +   theme_bw()
-
-```
-
-Clearly, this is not an valuable source of information for bettors. Regardless of whether you made your bets in favor or against the direction that the spread line moved, you would walk away a loser at the end of the day. 
-
-###4.2.2 A No Commission World
-
-This result fact, though, gives us a great opportunity to highlight the damaging long term effect of paying a 2.5% commission on every bet, as was done in this simulation. To showcase this, we will present the outcomes of running the exact same simulation, but this time, winning \$100 on a \$100 bet. 
-
-```{r}
-for (j in 1:length(spreadChange$Change)){ 
-  tidy$Payout <- 0
-  for (i in 1:length(tidy$Payout)) {
-    if (spreadChange$Change[j] == tidy$HSpreadChange[i]) {  # if spread change for the game is a hit
-      if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) {    # if home team beat spread
-        tidy$Payout[i] <- 100
-      } else if (tidy$VF[i] - tidy$HF[i] > tidy$HSpreadClose[i]){
-        tidy$Payout[i] <- -100
-      }
-      
-    } else if (spreadChange$Change[j] == tidy$VSpreadChange[i]) {
-      if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) {    # if vis team beat spread
-        tidy$Payout[i] <- 100
-      } else if (tidy$HF[i] - tidy$VF[i] > tidy$VSpreadClose[i]) {
-        tidy$Payout[i] <- -100
-      }
-    }
-  }
-  spreadChange$Profit[j] = sum(tidy$Payout)
-}
-
-spreadChange$Change <- as.factor(spreadChange$Change)
-ggplot(spreadChange, aes(x=Change, y=Profit)) +
+com <- ggplot(spreadChange, aes(x=Change, y=Profit)) +
   geom_bar(stat='identity', fill='brown', color='black') +
   geom_text(aes(label = paste(Profit),
                 vjust = ifelse(Profit >= 0, -0.5, 1.5)), size=3) +
   scale_y_continuous(limits = c(-15000,5000)) +
-  labs(x="Spread Change", y="Profit ($)",
-       title="Net Profit When Betting in Direction of Given Spread Change") +
+  labs(x="Spread Change", y = "Profit ($)",
+       title="Betting in Direction of Spread Change") +
   theme_bw()
+com
+```
+
+Clearly, this is not an valuable source of information for bettors. Regardless of whether you made your bets in favor or against the direction that the spread line moved, you would have walked away a loser at the end of the day for nearly all spread change values.
+
+###4.2.2 A No Commission World
+
+This result fact, though, gives us a great opportunity to highlight the damaging long term effect of paying a 2.5% commission on every bet, as was done in this simulation. To showcase this, we will present the outcomes of running the exact same simulation, but this time, winning \$100 on a \$100 bet, which in effect serves the purpose of operating in a zero commission world.
+
+```{r fig.height=5, fig.width=10}
+for (j in 1:length(spreadChange$Change)){ 
+  tidy$Payout <- 0
+  for (i in 1:length(tidy$Payout)) {
+    if (spreadChange$Change[j] == tidy$HSpreadChange[i]) {  
+      if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) {  
+        tidy$Payout[i] <- 100
+      } else if (tidy$VF[i] - tidy$HF[i] > tidy$HSpreadClose[i]){
+        tidy$Payout[i] <- -100
+      }
+    } else if (spreadChange$Change[j] == tidy$VSpreadChange[i]) {
+      if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) {
+        tidy$Payout[i] <- 100
+      } else if (tidy$HF[i] - tidy$VF[i] > tidy$VSpreadClose[i]) {
+        tidy$Payout[i] <- -100
+      }
+    }
+  }
+  spreadChange$Profit[j] = sum(tidy$Payout)
+}
+
+spreadChange$Change <- as.factor(spreadChange$Change)
+nocom <- ggplot(spreadChange, aes(x=Change, y=Profit)) +
+  geom_bar(stat='identity', fill='brown', color='black') +
+  geom_text(aes(label = paste(Profit),
+                vjust = ifelse(Profit >= 0, -0.5, 1.5)), size=3) +
+  scale_y_continuous(limits = c(-15000,5000)) +
+  labs(x="Spread Change", y = " ",title="Net Profit Without Commissions") +
+  theme_bw()
+
+com <- com + labs(title = "Net Profit With Commissions")
+grid.arrange(com, nocom, ncol = 2)
 ```
 
 The difference is clear. For all of the spread change values, net profits are significantly greater. The symmetry for positive and negative spread change values also reveals itself. This makes logical sense, because if you would bet in favor of the spread line movement (negative spread change bars) for one team, you would bet for their opponent to beat the spread when you bet against the spread line movement (positive spread change bars).
 
-Now we can see that it is clearly in one's interest to bet against the movement of the spread if it is possible to remove the commission. To give a concrete example. If a team of interest was initially an underdog needing to beat a +5 spread at the open, and then the line moved to a +7 spread at the close  (close - open = 7 - 5 = +1), then you should bet FOR that team to beat the +7 spread.
+Now we can see that it is clearly in one's interest to bet against the movement of the spread if it is possible to remove the commission. To give a concrete example. If a team of interest was initially an underdog needing to beat a +5 spread at the open, and then the line moved to a +7 spread at the close (close - open = 7 - 5 = +2), then you should bet FOR that team to beat the +7 spread.
 
 
 ###4.2.3  No Commission, Running Profit
@@ -538,8 +575,8 @@ To highlight this disparity, we wanted to show a running profit over time by usi
 tidy$Payout <- 0
 tidy$Payout[1] <- 100
 for (i in 2:length(tidy$Payout)) {
-  if (tidy$HSpreadChange[i] > 0) {  # if spread change for the game is a hit
-    if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) {    # if home team beat spread
+  if (tidy$HSpreadChange[i] > 0) {  
+    if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) { 
       tidy$Payout[i] <- tidy$Payout[i - 1] + 100
     } else if (tidy$VF[i] - tidy$HF[i] > tidy$HSpreadClose[i]){
       tidy$Payout[i] <- tidy$Payout[i - 1] - 100
@@ -547,7 +584,7 @@ for (i in 2:length(tidy$Payout)) {
       tidy$Payout[i] <- tidy$Payout[i - 1]
     }
   } else if (tidy$VSpreadChange[i] > 0) {
-    if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) {    # if vis team beat spread
+    if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) { 
       tidy$Payout[i] <- tidy$Payout[i - 1] + 100
     } else if (tidy$HF[i] - tidy$VF[i] > tidy$VSpreadClose[i]) {
       tidy$Payout[i] <- tidy$Payout[i - 1] - 100
@@ -581,13 +618,14 @@ ggplot(tidy, aes(y = Payout, x = Date, col = "Payout")) +
 
 As a last visualization, we thought that it would be interesting to see how fans of specific teams have performed over time. We hypothesized that some factors could be relevant in regards to which teams have their moneylines (effectively, probability of winning a game) overvalued or undervalued. For example, since New York has a much larger population than Memphis, this may result in more people betting on the New York Knicks to win the game in a straight moneyline bet than the Grizzlies. If this is the case, New York would be disproportionately overvalued, resulting in lower payouts than the corresponding chance of them winning a game.
 
-
-```{r}
+```{r message=FALSE}
 tidy <- read_csv("../Data/tidy.csv")
 df <- tidy %>% 
   select(V, H, VF, HF, VMoney, HMoney) %>%
-  mutate(Bet_V_win = if_else(VF>HF, if_else(VMoney>0, VMoney, -100/VMoney*100), if_else(VF<HF, -100, 0))) %>%
-  mutate(Bet_H_win = if_else(VF<HF, if_else(HMoney>0, HMoney, -100/HMoney*100), if_else(VF>HF, -100, 0)))
+  mutate(Bet_V_win = if_else(VF>HF, if_else(VMoney>0, VMoney, -100/VMoney*100),
+                             if_else(VF<HF, -100, 0))) %>%
+  mutate(Bet_H_win = if_else(VF<HF, if_else(HMoney>0, HMoney, -100/HMoney*100),
+                             if_else(VF>HF, -100, 0)))
 
 df_V <- df %>%
   group_by(V) %>% summarise_at("Bet_V_win", sum) %>%
@@ -610,5 +648,9 @@ ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
 
 
 From this Cleveland Dot Plot, it is evident that some teams have had more success than others on the betting markets. The exact patterns or reasoning is not evident, though. From this graph we can also see the commissions playing a factor, as only five teams would have resulted in a net profit that is positive, if a bettor would have exclusively bet on this team. In a zero commission world, these dots would be centered approximately around a betting profit of \$0. 
+
+***
+
+This concludes our main analysis. Please read our Executive Summary and Conclusion for a succint report of our findings!
 
 

@@ -119,12 +119,14 @@ tidy.loc[df.index[11958], 'HF'] = tidy.loc[df.index[11958], ['H1', 'H2', 'H3', '
 
 tidy.to_csv("../Data/tidy.csv", index_label="Index")
 
+'''
 # Quick graphs to check for outliers:
-'''tidy.ix[:, 4:12].plot(kind='box')  # Quarter Scores
+tidy.ix[:, 4:12].plot(kind='box')  # Quarter Scores
 tidy.ix[:, 12:14].plot(kind='box')  # Final Scores
 tidy.ix[:, 14:16].plot(kind='box')  # OUs
 tidy.ix[:, 16:20].plot(kind='box')  # Spreads
 tidy.ix[:, 20:22].plot(kind='box')  # Money lines
 tidy.ix[:, 22].plot(kind='box')  # OU second half
-tidy.ix[:, 23:].plot(kind='box')  # Spreads second half'''
+tidy.ix[:, 23:].plot(kind='box')  # Spreads second half
+'''
 
