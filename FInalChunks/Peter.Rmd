@@ -529,8 +529,89 @@ ggplot(spreadChange, aes(x=Change, y=Profit)) +
 
 The difference is clear. For all of the spread change values, net profits are significantly greater. The symmetry for positive and negative spread change values also reveals itself. This makes logical sense, because if you would bet in favor of the spread line movement (negative spread change bars) for one team, you would bet for their opponent to beat the spread when you bet against the spread line movement (positive spread change bars).
 
-Now we can see that it is clearly in one's interest to bet against the movement of the spread. To give a concrete example. If a team of interest was initially an underdog needing to beat a +5 spread at the open, and then the line moved to a +7 spread at the close  (close - open = 7 - 5 = +1), then you should bet FOR that team to beat the +7 spread.
+Now we can see that it is clearly in one's interest to bet against the movement of the spread if it is possible to remove the commission. To give a concrete example. If a team of interest was initially an underdog needing to beat a +5 spread at the open, and then the line moved to a +7 spread at the close  (close - open = 7 - 5 = +1), then you should bet FOR that team to beat the +7 spread.
 
 
+#4.2.3  No Commission, Running Profit
+To highlight this disparity, we wanted to show a running profit over time by using the betting system described above in a zero commission world. This is not entirely unrealistic, as bettors that are set up with multiple sportsbooks will have a selection of odds to choose from. So, while the lines between sportsbooks are always very similar, there are often disparities that can be taken advantage of on the part of the bettor, in order to effectively reduce the commission that they pay on every bet. 
+```{r}
+tidy$Payout <- 0
+tidy$Payout[1] <- 100
+for (i in 2:length(tidy$Payout)) {
+  if (tidy$HSpreadChange[i] > 0) {  # if spread change for the game is a hit
+    if (tidy$VF[i] - tidy$HF[i] < tidy$HSpreadClose[i]) {    # if home team beat spread
+      tidy$Payout[i] <- tidy$Payout[i - 1] + 100
+    } else if (tidy$VF[i] - tidy$HF[i] > tidy$HSpreadClose[i]){
+      tidy$Payout[i] <- tidy$Payout[i - 1] - 100
+    } else {
+      tidy$Payout[i] <- tidy$Payout[i - 1]
+    }
+  } else if (tidy$VSpreadChange[i] > 0) {
+    if (tidy$HF[i] - tidy$VF[i] < tidy$VSpreadClose[i]) {    # if vis team beat spread
+      tidy$Payout[i] <- tidy$Payout[i - 1] + 100
+    } else if (tidy$HF[i] - tidy$VF[i] > tidy$VSpreadClose[i]) {
+      tidy$Payout[i] <- tidy$Payout[i - 1] - 100
+    } else {
+      tidy$Payout[i] <- tidy$Payout[i - 1]
+    }
+  } else {
+      tidy$Payout[i] <- tidy$Payout[i - 1]
+  }
+}
+
+ggplot(tidy, aes(y = Payout, x = Date, col = "Payout")) +
+  geom_line(lwd = 0.1) +
+  geom_ribbon(aes(x = Date, ymax = Payout), ymin = 0, alpha=0.3,
+              fill = "darkgreen", color = "darkgreen") + 
+  geom_hline(aes(yintercept = max(Payout), colour = "High"),
+             alpha = 0.8, lwd = 1, linetype="dotdash") +
+  geom_hline(aes(yintercept = min(Payout), colour = "Low"), alpha = 0.8, lwd = 1,
+             linetype="dotdash") +
+  geom_hline(aes(yintercept = Payout[14186], colour = "Finish"), alpha = 0.8,
+             lwd = 1, linetype="dotdash") +
+  ggtitle("Running Profit When Betting Against Spread Movement") +
+  scale_color_manual(values = c('Payout' = 'darkgreen', "Low" = "red",
+                                "High" = "blue", "Finish" = "black")) +
+  labs(x = "Date", y = "Running Profit ($)", color = "Legend:") +
+  theme_bw()
+```
+
+
+#4.3  Specific Teams
+
+As a last visualization, we thought that it would be interesting to see how fans of specific teams have performed over time. We hypothesized that some factors could be relevant in regards to which teams have their moneylines (effectively, probability of winning a game) overvalued or undervalued. For example, since New York has a much larger population than Memphis, this may result in more people betting on the New York Knicks to win the game in a straight moneyline bet than the Grizzlies. If this is the case, New York would be disproportionately overvalued, resulting in lower payouts than the corresponding chance of them winning a game.
+
+
+```{r}
+tidy <- read_csv("../Data/tidy.csv")
+df <- tidy %>% 
+  select(V, H, VF, HF, VMoney, HMoney) %>%
+  mutate(Bet_V_win = if_else(VF>HF, if_else(VMoney>0, VMoney, -100/VMoney*100), if_else(VF<HF, -100, 0))) %>%
+  mutate(Bet_H_win = if_else(VF<HF, if_else(HMoney>0, HMoney, -100/HMoney*100), if_else(VF>HF, -100, 0)))
+
+df_V <- df %>%
+  group_by(V) %>% summarise_at("Bet_V_win", sum) %>%
+  rename(Team = V)
+
+df_H <- df %>%
+  group_by(H) %>% summarise_at("Bet_H_win", sum) %>%
+  rename(Team = H)
+
+df_Team <- df_V %>% 
+  inner_join(df_H) %>%
+  mutate(profit = Bet_V_win + Bet_H_win)
+
+ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
+  geom_point(color = "brown", size = 2) +
+  labs(x="Profit ($)", y="NBA Team") +
+  ggtitle("Cleveland Dot Plot of Net Profit by Betting on Same Team") +
+  theme_bw()
+```
+
+
+From this Cleveland Dot Plot, it is evident that some teams have had more success than others on the betting markets. The exact patterns or reasoning is not evident, though. From this graph we can also see the commissions playing a factor, as only five teams would have resulted in a net profit that is positive, if a bettor would have exclusively bet on this team. In a zero commission world, these dots would be centered approximately around a betting profit of \$0. 
+
+
+#5  Executive Summary
 
 

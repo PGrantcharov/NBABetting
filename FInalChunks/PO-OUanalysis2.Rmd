@@ -164,6 +164,9 @@ ggplot(df_Team, aes(x= profit, y= fct_reorder(Team, profit))) +
   labs(x="Betting Profit", y="NBA Team") +
   ggtitle("Cleveland Dot Plot of Net Profit by Betting on Same Team")
 ```
+
+
+
 ```{r}
 df <- tidy %>% select(Total, Total_2H, OU2H, OUClose)
 
