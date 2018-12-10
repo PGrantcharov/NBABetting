@@ -3,7 +3,6 @@ title: "Sports Betting Analysis of NBA Matches Since 2007"
 author: "Peter Grantcharov, Fernando Troeman, Po-Chieh Liu"
 date: "12/10/2018"
 output:
-  html_document: default
   pdf_document: default
 ---
 
@@ -168,7 +167,7 @@ df = df.replace(to_replace="LA Clippers", value="LAClippers")
 A convention in sports betting is to name 50/50 bets as "Pick 'em" bets. In this dataset, those bets were denoted as "pk" or "PK". Further, on occasion, sportsbooks will close the book on certain games for a variety of reasons. Such games are denoted as "no line" or "NL" in this dataset. The former were given values of '0' in our data frame and the latter were given 'NA' values so those games could be easily dropped. Lastly, a few mis-entries were also identified below because they either had characters in a numerical column, or had values differing by a factor of 10. The correction process is shown below:
 
 ```{r}
-kable((combined %>% filter(`2H` == 'pk'))[1:5,],
+kable((combined %>% filter(`2H` == 'pk'))[1:3,],
       caption = "Pick 'em Examples *Notice column '2H'")
 kable(combined[c(1975,23521),], caption = "Faulty Over/Under Cases")
 ```
@@ -389,22 +388,22 @@ Our suspicion is that if the over/under increases (that is, more people think th
 
 Our simulation will places \$100 bets in each of those instances. The following bar chart shows the net profits for each of the different line movements by implementing this betting system over the entirity of our dataset. 
 ```{r}
-df <- tidy %>% 
+df1 <- tidy %>% 
   select(OUOpen, OUClose, Total, OU2H, Total_2H) %>%
   mutate(Diff = OUClose-OUOpen) %>% 
   mutate(Diff_dec_idx = 
            cut(Diff,
                breaks = c(-Inf, -5.49, -4.49, -3.49, -2.49, -1.49, -0.49,
                           0.49, 1.49, 2.49, 3.49, 4.49, 5.49, Inf), 
-               labels = c("<= -5.5","-5 & -4.5","-4 & -3.5", "-3 & -2.5",
-                          "-2 & -1.5", "-1 & -0.5", "skip",
-                          "0.5 & 1", "1.5 & 2", "2.5 & 3",
-                          "3.5 & 4", "4.5 & 5", ">= 5.5"))) %>%
+               labels = c("<= -5.5","-5&-4.5","-4&-3.5", "-3&-2.5",
+                          "-2&-1.5", "-1&-0.5", "skip",
+                          "0.5&1", "1.5&2", "2.5&3",
+                          "3.5&4", "4.5&5", ">= 5.5"))) %>%
   filter(!(Diff_dec_idx == "skip")) %>%
   mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95,
                             if_else(Total_2H==OU2H, 0, -100) ) )
 
-df2 <- df %>%  group_by(Diff_dec_idx) %>%
+df2 <- df1 %>%  group_by(Diff_dec_idx) %>%
   summarise(profit = sum(earning)) %>%
   filter(as.numeric(Diff_dec_idx)>0)
 
@@ -443,7 +442,7 @@ for (i in 2:length(df$Profit)){
   }
 }
 
-ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
+winner <- ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
   geom_line(lwd = 0.1) +
   geom_ribbon(aes(x = Date, ymax = Profit), ymin = 0, alpha=0.3,
               fill = "darkgreen", color = "darkgreen") + 
@@ -456,6 +455,7 @@ ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
                                 "High" = "blue", "Finish" = "black")) +
   labs(x = "Date", y = "Running Profit ($)", color = "Legend:") +
   theme_bw()
+winner
 ```
 
 Frankly, this finding is absolutely remarkable. We have re-run and re-tested this result for several hours to confirm its validity. In short, this graphic shows that if you were to have been \$100 on the "under" for the second half over/under in all NBA games since the beginning of the 2007-2008 NBA season, you would be up over \$98,000. 
@@ -611,18 +611,18 @@ As a last visualization, we thought that it would be interesting to see how fans
 
 ```{r message=FALSE}
 tidy <- read_csv("../Data/tidy.csv")
-df <- tidy %>% 
+df2 <- tidy %>% 
   select(V, H, VF, HF, VMoney, HMoney) %>%
   mutate(Bet_V_win = if_else(VF>HF, if_else(VMoney>0, VMoney, -100/VMoney*100),
                              if_else(VF<HF, -100, 0))) %>%
   mutate(Bet_H_win = if_else(VF<HF, if_else(HMoney>0, HMoney, -100/HMoney*100),
                              if_else(VF>HF, -100, 0)))
 
-df_V <- df %>%
+df_V <- df2 %>%
   group_by(V) %>% summarise_at("Bet_V_win", sum) %>%
   rename(Team = V)
 
-df_H <- df %>%
+df_H <- df2 %>%
   group_by(H) %>% summarise_at("Bet_H_win", sum) %>%
   rename(Team = H)
 
@@ -646,12 +646,55 @@ This concludes our main analysis. If you would like an opportunity to discover y
 \newpage
 
 #5  Executive Analysis
-
 ##5.1 Introduction
+###5.1.1 Theory Background
+When one walks into a casino, one can precisely state the probability of winning and losing at certain games. This is because all variables at play have been calculated beforehand, and the payouts for winning/losing are determined accordingly such that by the law of large numbers, the gambler will always lose to the house. 
+
+Sports matches, on the other hand, consists of an infinite number of variables which can only be estimated. Since betting on sports outcomes is offered, though, this implies that there may be a discrepancy between the probability of winning certain bets and the TRUE probability (incalculable in theory) of those events occuring. This leaves an opening for potential exploitation.
+
+###5.1.2 Sports Betting Background
+Sports betting offers many different avenues by which bets can be made. The most popular such bets are for the outright game winner, the total amount of points in the game, and the margin of victory between two teams.
+
+In this report, we specifically focused on betting pertaining to NBA basketball games. We investigated possible betting systems for all of the aforementioned betting avenues, and attempted to discover systems that would have been profitable if implemented over the course of the past 11 NBA seasons. If such a system exists, it would reveal flaws within the betting market's ability to accurately determine the probabilities of certain events, which could in turn be exploited for capital gain.
+
+##5.2 Findings
+###5.2.1 Betting System Description
+Our most successful betting system pertains to over/under betting for the second half of basketball games. In such a bet, a sportsbook will provide a **number.** The bettor can then bet on whether they think the total number of points scored in the second half of the basketball game will be *over* or *under* this **number.**
+
+Through a gradual evolving of a betting system that built upon previous discoveries, we were able to finalize our very simple, yet effective, betting system. In the first iteration of the discovery process, we proposed a betting system that would pick the over or the under based on prior information. The prior information turned out to be irrelevant, but regardless, please notice the clear separation of the bars in Figure 1, with those on the left half being mostly profitable, and those on the right half being unprofitable.
+
+```{r echo=FALSE, fig.align="center", fig.width = 7, fig.height=4}
+df2 <- df1 %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>%
+  mutate( Gain = if_else(profit>0, "+", "-"))
+
+ggplot(df2, aes(x=Diff_dec_idx, y = profit, fill = Gain)) +
+  geom_bar(stat='identity') +
+  xlab("Score Difference") +
+  ylab("Profit ($)") + 
+  geom_text(aes(label = paste(profit), vjust=if_else(profit>0,-0.5,1)), size = 3) +
+  ggtitle("Profit by Betting System Based on Open-to-Close Score Change") +
+  theme_bw()+
+  scale_fill_manual(values=c("brown", "darkgreen")) +
+  theme(legend.position="none") +
+  labs(caption = "Fig. 1")
+```
+
+From this graph, we could see that simply changing our strategy such that the red bars would be inverted would result in a very effective system. This betting system is simply to select the "under" for all over/under bets in the second half of NBA games. If \$100 had been made on such a bet for every game since 2007, then Figure 2 would represent the running profit over time since that point.
+
+###5.2.2 Outcomes
+
+```{r echo=FALSE, fig.align="center", fig.width=7, fig.height=4}
+winner + labs(caption = "Fig. 2")
+```
+
+
+##5.3 Conclusion
+Clearly, these results are significant. They show that our proposed betting system would have made a bettor nearly \$100,000 if it had been implemented since 2007. It is of course impossible to predict future games, however, there cannot be a stronger indicator than past results!
 
 
 
+\newpage
 
-
-
-
+#6  Conclusion
+##6.1 Limitations
+With regards to the 
