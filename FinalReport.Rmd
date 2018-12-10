@@ -16,6 +16,7 @@ library(GGally)
 library(gridExtra)
 library(knitr)
 library(lubridate)
+library(ggthemes)
 
 combined = read_csv("Data/combined.csv")[-c(1)]
 intermediate = read_csv("Data/intermediate.csv")
@@ -447,22 +448,22 @@ for (i in 2:length(df$Profit)){
   }
 }
 
-winner <- ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
+winner <- ggplot(df, aes(y = Profit/1000, x = Date, col = "Profit")) +
   geom_line(lwd = 0.1) +
-  geom_ribbon(aes(x = Date, ymax = Profit), ymin = 0, alpha=0.3,
-              fill = "darkgreen", color = "darkgreen") + 
+  geom_ribbon(aes(x = Date, ymax = Profit/1000), ymin = 0, alpha=0.3,
+              fill = "#009E73", color = "darkgreen") + 
   ggtitle("Profit Over Time by Betting 'Under' for 2nd Half Over/Under") +
-  labs(x = "Date", y = "Running Profit ($)") +
+  labs(x = "Date", y = "Running Profit ($, thousands)") +
   theme_bw()
 
 winner + 
-  geom_hline(aes(yintercept = min(Profit), colour = "Low"),
+  geom_hline(aes(yintercept = min(Profit)/1000, colour = "Low"),
                     alpha = 0.8, lwd = 1, linetype="dotdash") +
-  geom_hline(aes(yintercept = Profit[14186], colour = "Finish"),
+  geom_hline(aes(yintercept = Profit[14186]/1000, colour = "Finish"),
              alpha = 0.8, lwd = 1, linetype="dotdash") +
   scale_color_manual(values = c('Profit' = 'darkgreen', "Low" = "red",
                                 "High" = "blue", "Finish" = "black")) +
-  labs(x = "Date", y = "Running Profit ($)", color = "Legend:")
+  labs(x = "Date", y = "Running Profit ($, thousands)", color = "Legend:")
 
 ```
 
@@ -605,7 +606,7 @@ for (i in 2:length(tidy$Payout)) {
 ggplot(tidy, aes(y = Payout, x = Date, col = "Payout")) +
   geom_line(lwd = 0.1) +
   geom_ribbon(aes(x = Date, ymax = Payout), ymin = 0, alpha=0.3,
-              fill = "darkgreen", color = "darkgreen") + 
+              fill = "#009E73", color = "darkgreen") + 
   geom_hline(aes(yintercept = max(Payout), colour = "High"),
              alpha = 0.8, lwd = 1, linetype="dotdash") +
   geom_hline(aes(yintercept = min(Payout), colour = "Low"), alpha = 0.8, lwd = 1,
@@ -705,16 +706,17 @@ df2 <- df %>% group_by(year(Date)) %>%
 names(df2) <- c("Season", "Profit")
 
 df2$Season <- as.factor(df2$Season)
-fig1 <- ggplot(df2, aes(x=Season, y = Profit)) +
-  geom_bar(stat='identity', fill = "darkgreen", color = "black") +
+fig1 <- ggplot(df2, aes(x=Season, y = Profit/1000)) +
+  geom_bar(stat='identity', fill = "#009E73", color = "black") +
   xlab("Year") +
-  ylab("Profit ($)") + 
+  ylab("Profit ($, thousands)") + 
   ggtitle("Profit by Year by Betting 'Under' for 2nd Half Over/Under") +
   theme_bw()+
   labs(caption = "Fig. 1")
 
-fig2 <- winner + labs(caption = "Fig. 2") + theme(legend.position = "none")
-
+fig2 <- winner + labs(caption = "Fig. 2") +
+  theme(legend.position = "none")
+  
 grid.arrange(fig1, fig2, ncol = 2)
 ```
 
