@@ -114,7 +114,7 @@ ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
   ggtitle("Placing Bet On Over OU2H if Score Difference is Positive, and Vice Versa")
 ```
 
-add color
+add color, add Gain variable (need a better variable name)
 
 ```{r}
 df <- tidy %>% 
