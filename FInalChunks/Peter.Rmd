@@ -15,6 +15,7 @@ library(xts)
 library(GGally)
 library(gridExtra)
 library(knitr)
+library(lubridate)
 
 combined = read_csv("../Data/combined.csv")[-c(1)]
 intermediate = read_csv("../Data/intermediate.csv")
@@ -39,7 +40,7 @@ We chose this topic to satisfy the primal parts of our psyches that are stimulat
 
 4) Data exploration and visualization
 
-We therefore found this dataset to be an excellent suitor for delivering captivating insights and exercising our data analysis and visualization skills. Further, through this report's analysis, we are particularly interested in answwering the questions of:
+We therefore found this dataset to be an excellent suitor for delivering captivating insights and exercising our data analysis and visualization skills. Further, through this report's analysis, we are particularly interested in answering the questions of:
 
   * *How good are the market and the sportsbooks at correctly determining the odds for a given match-up?*
 
@@ -116,7 +117,9 @@ Spread bets, like over/under bets, are theoretically also 50%-50% bets, with a s
 
 3) Moneyline
 
-Moneyline bets are easier to digest, because they solely involve selecting the winner of a match. Because of this, the payouts vary significantly from match to match based on the teams (i.e., it is no longer a 50%-50% bet). Like spread betting, the favorite will have a negative moneyline value and the underdog will have a positive moneyline value. For favorites, this value is less than or equal to -100, and corresponds to the amount of money a bettor would have to bet in order to win \$100 on a correct bet. For underdogs, the value is greater than or equal to +100, and corresponds to the amount of money a bettor would win on a \$100 bet.
+Moneyline bets are easier to digest, because they solely involve selecting the winner of a match. Because of this, the payouts vary significantly from match to match based on the teams (i.e., it is no longer a 50%-50% bet). Like spread betting, the favorite will have a negative moneyline value and the underdog will have a positive moneyline value. For favorites, this value is less than or equal to -100, and corresponds to the amount of money a bettor would have to bet in order to win \$100 on a correct bet. For underdogs, the value is greater than or equal to +100, and corresponds to the amount of money a bettor would win on a \$100 bet. 
+
+So for example, if the moneyline for an LA Lakers vs. Houston Rockets game is -150 for LA and +140 for Houston, this means that on a correct \$150 bet on LA to win the game (by any margin), you would win \$100, while on a correct \$100 bet on Houston, you would win \$140. 
 
 \newpage
 
@@ -184,7 +187,7 @@ df.loc[df.index[23521], 'Open'] = 195.5
 
 
 ###3.2.3  Bad Entries:
-To located the bad entries, we found it effective to make graphs of the different variables - particularly box plots. This was performed for each of the numerical variables in the dataset:
+To locate the bad entries, we found it effective to make graphs of the different variables - particularly box plots. This was performed for each of the numerical variables in the dataset:
 
 Since all eight columns for quarter scores have nearly identical distributions, we could kill eight birds with one stone and plot them all at once. By identifying the mis-entries in these columns, we applied a generic threshold for all columns to remove the identified outliers. The before and after plots are shown below, with the Python code used to apply the corrections being printed below the graphs. 
 
@@ -218,7 +221,7 @@ grid.arrange(before, after, ncol = 2, widths = c(9, 9))
 
 Negative values are obviously impossible in the context of basketball scores, so those entries were promptly removed. Similarly, other extreme outliers were dropped, while the remaining outliers were assessed individually. Given that our dataset had over 14000 games, and that we were operating under the assumption that such mis-entries occur at random, we did not think that it would be harmful to the integrity of our analysis if we were rather loose with removing data entries. As can be seen, the quarter distributions looked much better after applying the corrections.
 
-Excerpt from the clearning script in Python:
+Excerpt from the cleaning script in Python:
 ```{python, eval = FALSE, python.reticulate = FALSE}
 # Fix outliers for quarter scores
 tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] < 70]
@@ -395,25 +398,27 @@ df1 <- tidy %>%
            cut(Diff,
                breaks = c(-Inf, -5.49, -4.49, -3.49, -2.49, -1.49, -0.49,
                           0.49, 1.49, 2.49, 3.49, 4.49, 5.49, Inf), 
-               labels = c("<= -5.5","-5&-4.5","-4&-3.5", "-3&-2.5",
-                          "-2&-1.5", "-1&-0.5", "skip",
-                          "0.5&1", "1.5&2", "2.5&3",
-                          "3.5&4", "4.5&5", ">= 5.5"))) %>%
+               labels = c("<= -6","-5","-4", "-3",
+                          "-2", "-1", "skip",
+                          "1", "2", "3",
+                          "4", "5", ">= 6"))) %>%
   filter(!(Diff_dec_idx == "skip")) %>%
   mutate(earning = if_else( (Total_2H-OU2H)*(Diff)>0, 95,
                             if_else(Total_2H==OU2H, 0, -100) ) )
 
 df2 <- df1 %>%  group_by(Diff_dec_idx) %>%
   summarise(profit = sum(earning)) %>%
-  filter(as.numeric(Diff_dec_idx)>0)
+  mutate( Gain = if_else(profit>0, "+", "-"))
 
-ggplot(df2, aes(x=Diff_dec_idx, y = profit)) +
-  geom_bar(stat='identity', fill = "brown", color = "black") +
+ggplot(df2, aes(x=Diff_dec_idx, y = profit, fill = Gain)) +
+  geom_bar(stat='identity', color = "black") +
   xlab("Open-to-Close Over/Under Change") +
   ylab("Profit ($)") +
+  scale_fill_manual(values=c("brown", "darkgreen")) +
   geom_text(aes(label = paste(profit), vjust=if_else(profit>0,-0.5,1)), size = 3) +
   ggtitle("Profit by Betting System Based on Open-to-Close Score Change") +
-  theme_bw()
+  theme_bw() +
+  theme(legend.position = "none")
 ```
 
 
@@ -446,16 +451,19 @@ winner <- ggplot(df, aes(y = Profit, x = Date, col = "Profit")) +
   geom_line(lwd = 0.1) +
   geom_ribbon(aes(x = Date, ymax = Profit), ymin = 0, alpha=0.3,
               fill = "darkgreen", color = "darkgreen") + 
-  geom_hline(aes(yintercept = min(Profit), colour = "Low"), alpha = 0.8, lwd = 1,
-             linetype="dotdash") +
-  geom_hline(aes(yintercept = Profit[14186], colour = "Finish"), alpha = 0.8,
-             lwd = 1, linetype="dotdash") +
   ggtitle("Profit Over Time by Betting 'Under' for 2nd Half Over/Under") +
+  labs(x = "Date", y = "Running Profit ($)") +
+  theme_bw()
+
+winner + 
+  geom_hline(aes(yintercept = min(Profit), colour = "Low"),
+                    alpha = 0.8, lwd = 1, linetype="dotdash") +
+  geom_hline(aes(yintercept = Profit[14186], colour = "Finish"),
+             alpha = 0.8, lwd = 1, linetype="dotdash") +
   scale_color_manual(values = c('Profit' = 'darkgreen', "Low" = "red",
                                 "High" = "blue", "Finish" = "black")) +
-  labs(x = "Date", y = "Running Profit ($)", color = "Legend:") +
-  theme_bw()
-winner
+  labs(x = "Date", y = "Running Profit ($)", color = "Legend:")
+
 ```
 
 Frankly, this finding is absolutely remarkable. We have re-run and re-tested this result for several hours to confirm its validity. In short, this graphic shows that if you were to have been \$100 on the "under" for the second half over/under in all NBA games since the beginning of the 2007-2008 NBA season, you would be up over \$98,000. 
@@ -468,9 +476,9 @@ Another parallel to over/under betting is that the actual value of the spread is
 
 ###4.2.1 Spread Movement as Indicator
 
-To see if we could replicate the success of our over/under betting model, we wanted to see if changes in spread values between the open and close would be indicators of new information. Rather than betting on second half spreads, though, we would simply select the closing spread based on the direction that the spread line moved.
+To see if we could replicate the success of our over/under betting model, we wanted to examine if changes in spread values between the open and close would be indicators of new information. Rather than betting on second half spreads, though, we would simply select the closing spread based on the direction that the spread line moved.
 
-To be specific, we would calculate the spread change, which occured in incraments of 0.5 points. For this visualization, we show the net earnings over time if you always bet on a team with a given net spread change. So for example, in the visualization below, we can see that the bar corresponding to a spread change of +2  had a net profit of $1730. This means that for all the instances where a team became LESS favored by 2 points (e.g. spread changed from +2 to +4, or -7 to -5), if you bet on that team, you would have seen those net earnings over the past 11 seasons. 
+To be specific, we would calculate the spread change, which occurred in increments of 0.5 points. For this visualization, we show the net earnings over time if you always bet on a team with a given net spread change. So for example, in the visualization below, we can see that the bar corresponding to a spread change of +2  had a net profit of $1730. This means that for all the instances where a team became LESS favored by 2 points (e.g. spread changed from +2 to +4, or -7 to -5), if you bet on that team, you would have seen those net earnings over the past 11 seasons. 
 
 ```{r message=FALSE}
 tidy <- read_csv("../Data/tidy.csv")
@@ -502,16 +510,19 @@ for (j in 1:length(spreadChange$Change)){
   }
   spreadChange$Profit[j] = sum(tidy$Payout)
 }
-
+spreadChange <- spreadChange %>%  mutate( Gain = if_else(Profit>0, "+", "-"))
 spreadChange$Change <- as.factor(spreadChange$Change)
-com <- ggplot(spreadChange, aes(x=Change, y=Profit)) +
-  geom_bar(stat='identity', fill='brown', color='black') +
+com <- ggplot(spreadChange, aes(x=Change, y=Profit, fill  = Gain)) +
+  geom_bar(stat='identity', color='black') +
   geom_text(aes(label = paste(Profit),
                 vjust = ifelse(Profit >= 0, -0.5, 1.5)), size=3) +
   scale_y_continuous(limits = c(-15000,5000)) +
+  scale_fill_manual(values=c("brown", "darkgreen")) +
   labs(x="Spread Change", y = "Profit ($)",
        title="Betting in Direction of Spread Change") +
-  theme_bw()
+  theme_bw() +
+  theme(legend.position = "none")
+
 com
 ```
 
@@ -542,14 +553,18 @@ for (j in 1:length(spreadChange$Change)){
   spreadChange$Profit[j] = sum(tidy$Payout)
 }
 
+spreadChange <- spreadChange %>%  mutate( Gain = if_else(Profit>0, "+", "-"))
 spreadChange$Change <- as.factor(spreadChange$Change)
-nocom <- ggplot(spreadChange, aes(x=Change, y=Profit)) +
-  geom_bar(stat='identity', fill='brown', color='black') +
+nocom <- ggplot(spreadChange, aes(x=Change, y=Profit, fill = Gain)) +
+  geom_bar(stat='identity', color='black') +
   geom_text(aes(label = paste(Profit),
                 vjust = ifelse(Profit >= 0, -0.5, 1.5)), size=3) +
   scale_y_continuous(limits = c(-15000,5000)) +
-  labs(x="Spread Change", y = " ",title="Net Profit Without Commissions") +
-  theme_bw()
+  scale_fill_manual(values=c("brown", "darkgreen")) +
+  labs(x="Spread Change", y = " ",
+       title="Net Profit Without Commissions") +
+  theme_bw() +
+  theme(legend.position = "none")
 
 com <- com + labs(title = "Net Profit With Commissions")
 grid.arrange(com, nocom, ncol = 2)
@@ -641,7 +656,9 @@ From this Cleveland Dot Plot, it is evident that some teams have had more succes
 
 ***
 
-This concludes our main analysis. If you would like an opportunity to discover your own betting system, please see our interactive component! From there, you can select your favorite NBA team and a particular betting type, and immediately discover how you would have performed in the betting markets over the past 11 seasons!
+This concludes our main analysis. If you would like an opportunity to discover your own betting system, please see our interactive component! From there, you can select your favorite NBA team and a particular betting method, and immediately discover how you would have performed in the betting markets over the past 11 seasons! 
+
+Link: http://www.fernandotroeman.com/nbaodds/
 
 \newpage
 
@@ -650,7 +667,7 @@ This concludes our main analysis. If you would like an opportunity to discover y
 ###5.1.1 Theory Background
 When one walks into a casino, one can precisely state the probability of winning and losing at certain games. This is because all variables at play have been calculated beforehand, and the payouts for winning/losing are determined accordingly such that by the law of large numbers, the gambler will always lose to the house. 
 
-Sports matches, on the other hand, consists of an infinite number of variables which can only be estimated. Since betting on sports outcomes is offered, though, this implies that there may be a discrepancy between the probability of winning certain bets and the TRUE probability (incalculable in theory) of those events occuring. This leaves an opening for potential exploitation.
+Sports matches, on the other hand, consists of an infinite number of variables which can only be estimated, and never be known for certain. But, since sportsbooks will offer bets on the outcomes of matches, this necessitates that they must gauge the probability of the outcomes in order to offer a fair bet. However, since these probabilities are only estimates, there may be a discrepancy between the probability of winning certain bets and the TRUE probability (incalculable in theory) of those events occuring. If such differences are found, this leaves an opening for potential exploitation.
 
 ###5.1.2 Sports Betting Background
 Sports betting offers many different avenues by which bets can be made. The most popular such bets are for the outright game winner, the total amount of points in the game, and the margin of victory between two teams.
@@ -659,37 +676,57 @@ In this report, we specifically focused on betting pertaining to NBA basketball 
 
 ##5.2 Findings
 ###5.2.1 Betting System Description
-Our most successful betting system pertains to over/under betting for the second half of basketball games. In such a bet, a sportsbook will provide a **number.** The bettor can then bet on whether they think the total number of points scored in the second half of the basketball game will be *over* or *under* this **number.**
+Our most successful betting system pertains to over/under betting for the second half of basketball games. In such a bet, a sportsbook will provide a **number.** The bettor can then bet on whether they think the total number of points scored in the second half of the basketball game will be *over* or *under* this **number.** The **number** is chosen by the sportsbook such that they estimate that there will be a 50%-50% chance of the true number of points scored in the game being above or below this **number**. We wanted to see whether these numbers were indeed chosen such that 50% of games totaled more points and 50% totaled less points. 
 
-Through a gradual evolving of a betting system that built upon previous discoveries, we were able to finalize our very simple, yet effective, betting system. In the first iteration of the discovery process, we proposed a betting system that would pick the over or the under based on prior information. The prior information turned out to be irrelevant, but regardless, please notice the clear separation of the bars in Figure 1, with those on the left half being mostly profitable, and those on the right half being unprofitable.
+Through a gradually evolving betting system that built upon previous discoveries, we were able to finalize our very simple, yet extremely effective, betting system. In the first iteration of the discovery process, we proposed a betting system that would pick the over or the under based on prior information. The prior information turned out to be irrelevant, but regardless, it lead us in the direction that we needed to go. The results are revealed in Section 5.2.2. 
 
-```{r echo=FALSE, fig.align="center", fig.width = 7, fig.height=4}
-df2 <- df1 %>%  group_by(Diff_dec_idx) %>% summarise(profit = sum(earning)) %>%
-  mutate( Gain = if_else(profit>0, "+", "-"))
-
-ggplot(df2, aes(x=Diff_dec_idx, y = profit, fill = Gain)) +
-  geom_bar(stat='identity') +
-  xlab("Score Difference") +
-  ylab("Profit ($)") + 
-  geom_text(aes(label = paste(profit), vjust=if_else(profit>0,-0.5,1)), size = 3) +
-  ggtitle("Profit by Betting System Based on Open-to-Close Score Change") +
-  theme_bw()+
-  scale_fill_manual(values=c("brown", "darkgreen")) +
-  theme(legend.position="none") +
-  labs(caption = "Fig. 1")
-```
-
-From this graph, we could see that simply changing our strategy such that the red bars would be inverted would result in a very effective system. This betting system is simply to select the "under" for all over/under bets in the second half of NBA games. If \$100 had been made on such a bet for every game since 2007, then Figure 2 would represent the running profit over time since that point.
+\newpage
 
 ###5.2.2 Outcomes
+In Figure 1, you will see the net profit for each year since the 2007 NBA season by betting \$100 on every NBA games's "under" side for the "over/under" bet. In Figure 2, please find a graph showing the running profit over this time period.
 
-```{r echo=FALSE, fig.align="center", fig.width=7, fig.height=4}
-winner + labs(caption = "Fig. 2")
+
+```{r echo=FALSE, fig.align="center", fig.width = 11, fig.height=5}
+df$Profit = 0
+for (i in 2:length(df$Profit)){
+  if (df$OU2H[i] > df$Total_2H[i]) {
+    df$Profit[i] <- 95
+  }
+  else if (df$OU2H[i] < df$Total_2H[i]) {
+    df$Profit[i] <- -100
+  }
+  else {
+    df$Profit[i] <- 0
+  }
+}
+
+df2 <- df %>% group_by(year(Date)) %>%
+  summarize(netprof = sum(Profit))
+names(df2) <- c("Season", "Profit")
+
+df2$Season <- as.factor(df2$Season)
+fig1 <- ggplot(df2, aes(x=Season, y = Profit)) +
+  geom_bar(stat='identity', fill = "darkgreen", color = "black") +
+  xlab("Year") +
+  ylab("Profit ($)") + 
+  ggtitle("Profit by Year by Betting 'Under' for 2nd Half Over/Under") +
+  theme_bw()+
+  labs(caption = "Fig. 1")
+
+fig2 <- winner + labs(caption = "Fig. 2") + theme(legend.position = "none")
+
+grid.arrange(fig1, fig2, ncol = 2)
 ```
 
 
-##5.3 Conclusion
-Clearly, these results are significant. They show that our proposed betting system would have made a bettor nearly \$100,000 if it had been implemented since 2007. It is of course impossible to predict future games, however, there cannot be a stronger indicator than past results!
+##5.3 Summary
+These results are quite significant. They show that our proposed betting system would have made a bettor nearly \$100,000 if it had been implemented since 2007. Given that 14186 games were played during this time span, this corresponds to a greater than 7% advantage for every single bet that is placed. 
+
+In essence, this is equivalent to offering a "double your money" wager for an event that occurs 57% of the time. What makes this finding even more meaningful, is the consistency of the returns year-over-year. As can be seen in Figure 1, no year is unprofitable. Although no statistical analysis have been made in regards to significance, the sheer sample size makes it clear that no such test is needed. If the consistency of this model had been known during this actual time period, a betting system that changed bet amounts based on the current bankroll would have been much more profitable, as it would not have been limited to insignificant \$100 bets when the bankroll had increased by tens of thousands of dollars.
+
+In statistical terms, the key finding here is that the sportsbooks overestimate the number of points that will be scored in the second half of NBA games. Because of this, the amount of games that have fewer points scored than the over/under value provided by the sportsbooks is much greater than the amount of games that score more points than the over/under value. Since the payouts correspond to a 50%-50% wager, though, this makes the under-side very profitable in the long run.
+
+With that said, it is of course impossible to predict future games. However, there cannot be a stronger indicator of future results than past results in this domain!
 
 
 
@@ -697,4 +734,28 @@ Clearly, these results are significant. They show that our proposed betting syst
 
 #6  Conclusion
 ##6.1 Limitations
-With regards to the 
+The greatest limitation with regards to this report as it pertains to the results, in our estimation, is the data. Error can seep into every dataset, and quality control over 14000 matches with 27 columns of variables is difficult to perform on such a scale. With that said, we did not think that this was enough of a concern to abandon our search for patterns and betting systems in this very interesting dataset. We performed a thorough and fairly comprehensive data cleaning to mitigate the effect of possible mis-entries, while frequently confirming data entries along the way. It was a very healthy exercise in data exploration and visualization from top to bottom.
+
+
+##6.2 Lessons Learned
+From a sports betting standpoint, we learned a lot. First and foremost, we were shocked at the accuracy of the models implemented by sportsbooks to gauge probabilities of outcomes. Although we highlighted the most significant findings, which indeed were extremely intriguing, there were many more betting systems where the sportsbooks squeezed out any margin for profit with their commissions. In the long run, to be profitable as a bettor, one must find a model that has an advantage that exceeds the commissions that they pay (which tend to vary from 2-4%), and that is extremely difficult.
+
+As discussed, we also learned that it is indeed possible to be profitable if the right system is found. It is, however, only a matter of time before such market inefficiencies are discovered and balanced out (in the case of second half over/unders, the sportsbook-given over/under value will inevitably decrease). It is impossible to know when this transition takes place, and as such, bettors are susceptible to losing by implementing a model that is no longer valid.
+
+From a data analysis and exploration standpoint, this project was incredibly educational. The ugly sides of data science were clear with processes such as data cleaning, failed models, and uncooperative technology, et cetera. However, the process of discovering something truly remarkable was very rewarding. 
+
+
+##6.3 Future Directions
+With regards to this exact dataset, and the general practice of trying to find profitable betting systems, we have certainly discussed ideas as a group of how to proceed. There are many data sources out there, and after our tuition bills come in the mail, it would only be irresponsible of us to avoid exploring avenues by which it is possible to make a few extra dollars! A few systems we have discussed exploring are:
+
+* The relationship between the over under and the moneyline
+
+* Investigate how previous season champions perform against expectations
+
+* Could see how record at a given point in time affects how people bet
+
+* Performance of teams in back-to-back games 
+
+
+#THE END :)
+
