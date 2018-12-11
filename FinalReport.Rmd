@@ -203,6 +203,8 @@ before <- ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
   labs(x = "Quarter",
   y = "Number of Points",
   caption = "V = visitor, H = home") +
+  theme(axis.text=element_text(size=11),
+        axis.title=element_text(size=14)) +
   theme_bw()
 
 quarter_scores <- tidy %>% 
@@ -215,6 +217,8 @@ after <- ggplot(quarter_scores, aes(x = Quarter, y = Score)) +
   labs(x = "Quarter",
   y = "Number of Points",
   caption = "V = visitor, H = home") +
+  theme(axis.text=element_text(size=11),
+        axis.title=element_text(size=14)) +
   theme_bw()
 
 grid.arrange(before, after, ncol = 2, widths = c(9, 9))
@@ -235,26 +239,28 @@ tidy.iloc[:, 4:12] = tidy.iloc[:, 4:12][tidy.iloc[:, 4:12] > 0]
 The same process was performed for the Over/Under scores. The pre- and post-cleaning box plots appeared as follows:
 
 ```{r fig.width=12, fig.height=6}
-OUs <- intermediate %>% 
-  select(OUOpen, OUClose)
+OUs <- intermediate %>% select(OUOpen, OUClose)
 OUs <- gather(OUs, key = "OpenClose", value = "Value")
 
 before <- ggplot(OUs, aes(x = OpenClose, y = Value)) +
   geom_boxplot(fill = "brown", color = "black") +
-  ggtitle("Boxplots of Over/Under Scores at the Open and Close Before Adjustments") +
+  ggtitle("Boxplots of Over/Under Scores at the Open and Close Before") +
   labs(x = "Open/Close",
   y = "Over/Under for the Total Number of Points") +
+  theme(axis.text=element_text(size=11),
+        axis.title=element_text(size=14)) +
   theme_bw()
 
-OUs <- tidy %>% 
-  select(OUOpen, OUClose)
+OUs <- tidy %>% select(OUOpen, OUClose)
 OUs <- gather(OUs, key = "OpenClose", value = "Value")
 
 after <- ggplot(OUs, aes(x = OpenClose, y = Value)) +
   geom_boxplot(fill = "brown", color = "black") +
-  ggtitle("Boxplots of Over/Under Scores at the Open and Close After Adjustments") +
+  ggtitle("Boxplots of Over/Under Scores at the Open and Close After") +
   labs(x = "Open/Close",
   y = "Over/Under for the Total Number of Points") +
+  theme(axis.text=element_text(size=11),
+        axis.title=element_text(size=14)) +
   theme_bw()
 
 grid.arrange(before, after, ncol = 2, widths = c(9, 9))
@@ -271,8 +277,7 @@ tidy.OUOpen = tidy.OUOpen[tidy.OUOpen > 100]
 Lastly, we reviewed the distributions of the full game scores to try to identify some mis-entries among those. Again, we found the box plot to be an effective tool for doing so:
 
 ```{r fig.width = 12, fig.height=6}
-Tots <- intermediate %>% 
-  select(VF, HF)
+Tots <- intermediate %>% select(VF, HF)
 Tots <- gather(Tots, key = "Team", value = "Value")
 
 before <- ggplot(Tots, aes(x = Team, y = Value)) +
@@ -280,10 +285,11 @@ before <- ggplot(Tots, aes(x = Team, y = Value)) +
   ggtitle("Boxplots of Game Point Totals Before Adjustments") +
   labs(x = "Visitor/Home Final Score",
   y = "Total Number of Points") +
+  theme(axis.text=element_text(size=11),
+        axis.title=element_text(size=14)) +
   theme_bw()
 
-Tots <- tidy %>% 
-  select(VF, HF)
+Tots <- tidy %>% select(VF, HF)
 Tots <- gather(Tots, key = "Team", value = "Value")
 
 after <- ggplot(Tots, aes(x = Team, y = Value)) +
@@ -291,6 +297,8 @@ after <- ggplot(Tots, aes(x = Team, y = Value)) +
   ggtitle("Boxplots of Game Point Totals After Adjustments") +
   labs(x = "Visitor/Home Final Score",
   y = "Total Number of Points") +
+  theme(axis.text=element_text(size=11),
+        axis.title=element_text(size=14)) +
   theme_bw()
 
 grid.arrange(before, after, ncol = 2, widths = c(9, 9))
@@ -326,7 +334,7 @@ Given our intuition that changes in the over/under values carry some information
 
 ###4.1.1  Data Overview
 As a starting point, we wanted to explore the distribution of the relevant variables. As such, we plotted a histogram, box plot, and quartile-quartile plot of the differences between OUOpen and OUClose. As a means of comparison, we also plotted a scatter plot that aimed to showcase the strength of the relationship between the full game over/under values, and those for just the second half.
-```{r fig.height=12, fig.width=12}
+```{r fig.height=9, fig.width=9}
 tidy <- tidy %>% 
   select(Date, SZN, V, H, V1, V2, V3, V4, H1, H2, H3, H4,
          VF, HF, OUOpen, OUClose, OU2H, VMoney, HMoney) %>% 
@@ -341,7 +349,7 @@ histo <- ggplot(df, aes(x = Diff)) +
   geom_histogram(binwidth = 0.5, fill='brown', color='black') +
   xlab("Score Difference") + 
   ylab("Frequency Count") +
-  ggtitle("Histogram of Changes in Over/Under Values (OUClose-OUOpen)") +
+  ggtitle("Histogram of Changes in Over/Under Values") +
   theme_bw()
 
 box <- ggplot(df, aes(y= Diff)) + 
@@ -349,7 +357,7 @@ box <- ggplot(df, aes(y= Diff)) +
   scale_x_discrete() + 
   xlab("(OUClose - OUOpen)") + 
   ylab("Score Difference") +
-  ggtitle("Boxplot of Changes in Over/Under Values (OUClose-OUOpen)") +
+  ggtitle("Boxplot of Changes in Over/Under Values") +
   theme_bw()
 
 qq <- ggplot(df, aes(sample = Diff)) +
@@ -357,7 +365,7 @@ qq <- ggplot(df, aes(sample = Diff)) +
   stat_qq_line(distribution = qnorm, color= "brown", size = 2) +
   xlab("Theoratical") +
   ylab("Score Difference") +
-  ggtitle("QQ-Plot of Changes in Over/Under Values (OUClose-OUOpen)") +
+  ggtitle("QQ-Plot of Changes in Over/Under Values") +
   theme_bw()
 
 df <- tidy %>% select(OUClose, OU2H) %>% mutate(Ratio = OUClose / OU2H)
@@ -371,7 +379,7 @@ scat <- ggplot(df, aes(x = OUClose, y = OU2H)) +
   scale_y_continuous("Over/Under Scores for 2nd Half",
                      breaks = c(85,90,95,100,105,110,115,120),
                      labels = c("85","90","95","100","105","110","115","120")) +
-  ggtitle("Over/Under Scores at the Close for Full Game vs. 2nd Half") +
+  ggtitle("Over/Under Scores for Full Game vs. 2nd Half") +
   theme_bw()
 
 grid.arrange(histo, box, qq, scat, ncol = 2)
@@ -430,13 +438,12 @@ Clearly, there are some noticable trends here. When betting on the "under" for t
 
 Logically, we will simply modify our betting system such that we would ALWAYS bet on the under for the second half, regardless of which direction the open-to-close over/under line moved. This would invert the bars on the above graph for instances where the open-to-close over/under difference was positive. Our original hypothesis has been deemed incorrect, but we have stumbled upon some interesting results. We hereby present the running profit over time by implementing a betting system that always bets the under for the second half score:
 
-```{r}
+```{r fig.align="center"}
 df <- tidy  %>% select(Date, OUOpen, OUClose, OU2H, Total_2H) %>%
   mutate(Diff = OUClose-OUOpen)
   
 df$Profit = 0
 for (i in 2:length(df$Profit)){
-
   if (df$OU2H[i] > df$Total_2H[i]) {
     df$Profit[i] <- df$Profit[i - 1] + 95
   }
@@ -578,7 +585,7 @@ Now we can see that it is clearly in one's interest to bet against the movement 
 
 ###4.2.3  No Commission, Running Profit
 To highlight this disparity, we wanted to show a running profit over time by using the betting system described above in a zero commission world. This is not entirely unrealistic, as bettors that are set up with multiple sportsbooks will have a selection of odds to choose from. So, while the lines between sportsbooks are very similar, there are often disparities that can be taken advantage of on the part of the bettor, in order to effectively reduce the commission that they pay on every bet. 
-```{r}
+```{r fig.align="center"}
 tidy$Payout <- 0
 tidy$Payout[1] <- 100
 for (i in 2:length(tidy$Payout)) {
@@ -666,9 +673,9 @@ Link: http://www.fernandotroeman.com/nbaodds/
 #5  Executive Analysis
 ##5.1 Introduction
 ###5.1.1 Theory Background
-When one walks into a casino, one can precisely state the probability of winning and losing at certain games. This is because all variables at play have been calculated beforehand, and the payouts for winning/losing are determined accordingly such that by the law of large numbers, the gambler will always lose to the house. 
+When one walks into a casino, one can precisely state the probability of winning and losing at certain games. This is because all variables at play have been calculated beforehand, and the corresponding payouts for winning/losing are determined such that by the law of large numbers, the gambler will always lose to the house. 
 
-Sports matches, on the other hand, consists of an infinite number of variables which can only be estimated, and never be known for certain. But, since sportsbooks will offer bets on the outcomes of matches, this necessitates that they must gauge the probability of the outcomes in order to offer a fair bet. However, since these probabilities are only estimates, there may be a discrepancy between the probability of winning certain bets and the TRUE probability (incalculable in theory) of those events occuring. If such differences are found, this leaves an opening for potential exploitation.
+Sports matches, on the other hand, consist of an infinite number of variables which can only be estimated, but never be known for certain. Since sportsbooks offer bets on the outcomes of matches, though, this necessitates that they must gauge the probability of the outcomes in order to offer a fair bet. However, since these probabilities are only estimates, there may be a discrepancy between the corresponding payouts of winning certain bets and the true probability (incalculable in theory) of those events occuring. If such differences are found, this leaves an opening for potential exploitation. 
 
 ###5.1.2 Sports Betting Background
 Sports betting offers many different avenues by which bets can be made. The most popular such bets are for the outright game winner, the total amount of points in the game, and the margin of victory between two teams.
@@ -677,14 +684,16 @@ In this report, we specifically focused on betting pertaining to NBA basketball 
 
 ##5.2 Findings
 ###5.2.1 Betting System Description
-Our most successful betting system pertains to over/under betting for the second half of basketball games. In such a bet, a sportsbook will provide a **number.** The bettor can then bet on whether they think the total number of points scored in the second half of the basketball game will be *over* or *under* this **number.** The **number** is chosen by the sportsbook such that they estimate that there will be a 50%-50% chance of the true number of points scored in the game being above or below this **number**. We wanted to see whether these numbers were indeed chosen such that 50% of games totaled more points and 50% totaled less points. 
+Our most successful betting system pertains to over/under betting for the second half of basketball games. In such a bet, a sportsbook will provide a **number.** The bettor can bet on whether they think the total number of points scored in the second half of the basketball game will be *over* or *under* this **number.** The **number** is chosen by the sportsbook such that they estimate that there will be a 50%-50% chance of the true number of points scored in the game being above or below it. It therefore varies between individual games. For example, high scoring teams with notoriously bad defences playing each other would likely have a higher-than-average over/under value set for this match.
 
-Through a gradually evolving betting system that built upon previous discoveries, we were able to finalize our very simple, yet extremely effective, betting system. In the first iteration of the discovery process, we proposed a betting system that would pick the over or the under based on prior information. The prior information turned out to be irrelevant, but regardless, it lead us in the direction that we needed to go. The results are revealed in Section 5.2.2. 
+We wanted to see whether these numbers were indeed chosen such that 50% of games totaled more points and 50% totaled less points. 
+
+Through a gradually evolving betting system that built upon previous discoveries, we were able to finalize our very simple, yet extremely effective betting system. In the first iteration of the discovery process, we proposed a betting system that would pick the over or the under based on prior information. The prior information turned out to be irrelevant, but regardless, it led us in the right direction. The results are revealed in Section 5.2.2. 
 
 \newpage
 
 ###5.2.2 Outcomes
-In Figure 1, you will see the net profit for each year since the 2007 NBA season by betting \$100 on every NBA games's "under" side for the "over/under" bet. In Figure 2, please find a graph showing the running profit over this time period.
+In Figure 1, you will see the net profit for each year since the 2007 NBA season by betting \$100 on every NBA games's "under" side for the "over/under" bet in the second half. In Figure 2, please find a graph showing the running profit by implementing this system from 2007 to 2018.
 
 
 ```{r echo=FALSE, fig.align="center", fig.width = 11, fig.height=5}
@@ -712,9 +721,13 @@ fig1 <- ggplot(df2, aes(x=Season, y = Profit/1000)) +
   ylab("Profit ($, thousands)") + 
   ggtitle("Profit by Year by Betting 'Under' for 2nd Half Over/Under") +
   theme_bw()+
+  theme(axis.text=element_text(size=11),
+        axis.title=element_text(size=14)) +
   labs(caption = "Fig. 1")
 
 fig2 <- winner + labs(caption = "Fig. 2") +
+  theme(axis.text=element_text(size=11),
+        axis.title=element_text(size=14)) +
   theme(legend.position = "none")
   
 grid.arrange(fig1, fig2, ncol = 2)
@@ -724,11 +737,13 @@ grid.arrange(fig1, fig2, ncol = 2)
 ##5.3 Summary
 These results are quite significant. They show that our proposed betting system would have made a bettor nearly \$100,000 if it had been implemented since 2007. Given that 14186 games were played during this time span, this corresponds to a greater than 7% advantage for every single bet that is placed. 
 
-In essence, this is equivalent to offering a "double your money" wager for an event that occurs 57% of the time. What makes this finding even more meaningful, is the consistency of the returns year-over-year. As can be seen in Figure 1, no year is unprofitable. Although no statistical analysis have been made in regards to significance, the sheer sample size makes it clear that no such test is needed. If the consistency of this model had been known during this actual time period, a betting system that changed bet amounts based on the current bankroll would have been much more profitable, as it would not have been limited to insignificant \$100 bets when the bankroll had increased by tens of thousands of dollars.
+In essence, this is equivalent to offering a "double your money" wager for an event that occurs 57% of the time. What makes this finding even more meaningful, is the consistency of the returns year-over-year. As can be seen in Figure 1, no year is unprofitable. Although no analyses have been made in regards to statistical significance, the sheer sample size makes it clear that no such test is needed. 
 
-In statistical terms, the key finding here is that the sportsbooks overestimate the number of points that will be scored in the second half of NBA games. Because of this, the amount of games that have fewer points scored than the over/under value provided by the sportsbooks is much greater than the amount of games that score more points than the over/under value. Since the payouts correspond to a 50%-50% wager, though, this makes the under-side very profitable in the long run.
+If the consistency of this model had been known during this actual time period, a betting system that changed bet amounts based on the current bankroll would have been much more profitable, as it would not have been limited to insignificant \$100 bets when the bankroll had increased by tens of thousands of dollars.
 
-With that said, it is of course impossible to predict future games. However, there cannot be a stronger indicator of future results than past results in this domain!
+In statistical terms, the key finding here is that the sportsbooks overestimate the number of points that will be scored in the second half of NBA games. Because of this, the amount of games that have fewer points scored than the over/under value provided by the sportsbooks is much greater than the expected 50%. Since the payouts correspond to a 50%-50% wager, though, this makes the under-side very profitable in the long run.
+
+With that said, it is of course impossible to predict future games. However, there is not a stronger indicator of future results than past results in this domain!
 
 
 
@@ -736,27 +751,27 @@ With that said, it is of course impossible to predict future games. However, the
 
 #6  Conclusion
 ##6.1 Limitations
-The greatest limitation with regards to this report as it pertains to the results, in our estimation, is the data. Error can seep into every dataset, and quality control over 14000 matches with 27 columns of variables is difficult to perform on such a scale. With that said, we did not think that this was enough of a concern to abandon our search for patterns and betting systems in this very interesting dataset. We performed a thorough and fairly comprehensive data cleaning to mitigate the effect of possible mis-entries, while frequently confirming data entries along the way. It was a very healthy exercise in data exploration and visualization from top to bottom.
+The greatest limitation of this report as it pertains to the results, in our estimation, is the data. Error can seep into every dataset, and quality control over 14000 matches with 27 columns of variables is difficult to perform on such a scale. With that said, we did not think that this was enough of a concern to abandon our search for patterns and betting systems in this very interesting dataset. We performed a thorough and  comprehensive data cleaning to mitigate the effect of possible mis-entries, while frequently confirming data entries along the way. It was a very healthy exercise in data exploration and visualization from top to bottom.
 
 
 ##6.2 Lessons Learned
 From a sports betting standpoint, we learned a lot. First and foremost, we were shocked at the accuracy of the models implemented by sportsbooks to gauge probabilities of outcomes. Although we highlighted the most significant findings, which indeed were extremely intriguing, there were many more betting systems where the sportsbooks squeezed out any margin for profit with their commissions. In the long run, to be profitable as a bettor, one must find a model that has an advantage that exceeds the commissions that they pay (which tend to vary from 2-4%), and that is extremely difficult.
 
-As discussed, we also learned that it is indeed possible to be profitable if the right system is found. It is, however, only a matter of time before such market inefficiencies are discovered and balanced out (in the case of second half over/unders, the sportsbook-given over/under value will inevitably decrease). It is impossible to know when this transition takes place, and as such, bettors are susceptible to losing by implementing a model that is no longer valid.
+As discussed, we also learned that it is indeed possible to be profitable if the right system is found. It is, however, only a matter of time before such market inefficiencies are discovered and balanced out (in the case of second half over/unders, the sportsbook-given over/under value will inevitably see a consistent decrease). It is impossible to know when this transition takes place, and as such, bettors are susceptible to losing by implementing a model that is no longer valid.
 
 From a data analysis and exploration standpoint, this project was incredibly educational. The ugly sides of data science were clear with processes such as data cleaning, failed models, and uncooperative technology, et cetera. However, the process of discovering something truly remarkable was very rewarding. 
 
 
 ##6.3 Future Directions
-With regards to this exact dataset, and the general practice of trying to find profitable betting systems, we have certainly discussed ideas as a group of how to proceed. There are many data sources out there, and after our tuition bills come in the mail, it would only be irresponsible of us to avoid exploring avenues by which it is possible to make a few extra dollars! A few systems we have discussed exploring are:
+With regards to this exact dataset, and the general practice of trying to find profitable betting systems, we have certainly discussed ideas as a group of how to proceed. There are many data sources out there, and after our tuition bills come in the mail, it would only be irresponsible of us to avoid exploring avenues by which it is possible to make a few extra dollars! A few systems we have discussed exploring relate to:
 
 * The relationship between the over under and the moneyline
 
-* Investigate how previous season champions perform against expectations
+* Investigating how previous season champions perform against expectations
 
-* Could see how record at a given point in time affects how people bet
+* Investigating how a team's record at a given point in time affects how people bet
 
-* Performance of teams in back-to-back games 
+* Investigating performance of teams in back-to-back games 
 
 
 #THE END :)
